@@ -13,11 +13,50 @@ export async function POST(req: Request) {
   try {
     const update = await req.json();
 
-    // Handle text messages
-    if (update.message?.text) {
+    // Handle text and voice messages
+    let text = update.message?.text || '';
+
+    if (update.message?.voice) {
+      const telegramToken = process.env.TELEGRAM_BOT_TOKEN;
+      const fileId = update.message.voice.file_id;
+      
+      // 1. Get file path from Telegram
+      const fileRes = await fetch(`https://api.telegram.org/bot${telegramToken}/getFile?file_id=${fileId}`);
+      const fileData = await fileRes.json();
+      
+      if (fileData.ok) {
+        // 2. Download the audio file
+        const audioRes = await fetch(`https://api.telegram.org/file/bot${telegramToken}/${fileData.result.file_path}`);
+        const audioBlob = await audioRes.blob();
+
+        // 3. Transcribe using Groq Whisper
+        const formData = new FormData();
+        formData.append('file', audioBlob, 'voice.ogg');
+        formData.append('model', 'whisper-large-v3-turbo');
+
+        const groqRes = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+          },
+          body: formData
+        });
+
+        const groqData = await groqRes.json();
+        if (groqData.text) {
+          text = groqData.text;
+        } else {
+          // Fallback if transcription fails
+          const chatId = update.message.chat.id;
+          await sendTelegramMessage(chatId, '❌ No he podido entender el audio. ¿Puedes escribirlo?');
+          return NextResponse.json({ ok: true });
+        }
+      }
+    }
+
+    if (text) {
       const telegramId = update.message.from.id;
       const chatId = update.message.chat.id;
-      const text = update.message.text;
 
       // Handle /start command
       if (text === '/start') {
