@@ -37,8 +37,19 @@ export async function POST(req: Request) {
       }
 
       // Handle /vincular command
-      if (text.startsWith('/vincular ')) {
-        const code = text.replace('/vincular ', '').trim();
+      const cleanText = text.trim();
+      if (cleanText.startsWith('/vincular')) {
+        const parts = cleanText.split(' ');
+        const code = parts.length > 1 ? parts[1] : null;
+
+        if (!code) {
+          await sendTelegramMessage(
+            chatId,
+            '❌ Por favor, indica el código de vinculación.\n\nEjemplo: `/vincular 123456`'
+          );
+          return NextResponse.json({ ok: true });
+        }
+
         const result = await linkTelegramUser(telegramId, code);
 
         if (result.success) {
@@ -58,8 +69,8 @@ export async function POST(req: Request) {
       if (!auth) {
         await sendTelegramMessage(
           chatId,
-          '🔒 No estás vinculado al CRM.\n\n' +
-          'Genera un código en la web y envíamelo con:\n' +
+          '🔒 [NexusCRM] Tu cuenta de Telegram no está vinculada al sistema.\n\n' +
+          'Genera un código en la sección "Telegram" de la web y envíamelo aquí con este formato:\n\n' +
           '`/vincular TU_CODIGO`'
         );
         return NextResponse.json({ ok: true });
