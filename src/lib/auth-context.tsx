@@ -29,21 +29,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      await fetchProfile(session?.user ?? null);
-      setLoading(false);
-    });
+    let mounted = true;
+
+    const initAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        if (mounted) {
+          setUser(session?.user ?? null);
+          await fetchProfile(session?.user ?? null);
+        }
+      } catch (err) {
+        console.error('Error inicializando sesión:', err);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    initAuth();
+
+    // Set a safety timeout just in case Supabase hangs (3 seconds max)
+    const safetyTimeout = setTimeout(() => {
+      if (mounted && loading) {
+        setLoading(false);
+        console.warn('Auth init timeout reached, forcing load completion');
+      }
+    }, 3000);
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      setUser(session?.user ?? null);
-      await fetchProfile(session?.user ?? null);
-      setLoading(false);
+      if (mounted) {
+        setUser(session?.user ?? null);
+        try {
+          await fetchProfile(session?.user ?? null);
+        } catch (e) {
+          console.error('Error fetching profile on auth change:', e);
+        } finally {
+          setLoading(false);
+        }
+      }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      clearTimeout(safetyTimeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   return (
