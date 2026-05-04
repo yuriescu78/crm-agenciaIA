@@ -49,7 +49,7 @@ export async function processUserMessage(
   } catch (error) {
     console.error('Error processing user message:', error);
 
-    // Provide a user-friendly error message
+    // Provide a user-friendly error message, but include the raw error for debugging
     if (error instanceof Error) {
       if (error.message.includes('API_KEY')) {
         return '⚠️ Error de configuración: el servicio de IA no está disponible en este momento. Contacta al administrador.';
@@ -57,8 +57,9 @@ export async function processUserMessage(
       if (error.message.includes('rate limit') || error.message.includes('429')) {
         return '⏳ El servicio está temporalmente saturado. Inténtalo de nuevo en unos segundos.';
       }
+      return `❌ Error técnico del sistema: ${error.message}\n\n(Por favor, haz captura de este error para el desarrollador)`;
     }
 
-    return '❌ Ha ocurrido un error procesando tu mensaje. Inténtalo de nuevo o contacta al administrador.';
+    return `❌ Ha ocurrido un error desconocido procesando tu mensaje.`;
   }
 }
