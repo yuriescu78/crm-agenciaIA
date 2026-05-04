@@ -50,7 +50,8 @@ export default function ClientesPage() {
     if (confirm('¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer.')) {
       const { error } = await supabase.from('clients').delete().eq('id', id);
       if (error) {
-        alert('Error al eliminar el cliente');
+        console.error("Error deleting client:", error);
+        alert(`No se pudo eliminar el cliente. Es posible que tenga tareas u oportunidades asociadas.\n\nError técnico: ${error.message}`);
       } else {
         fetchClientes();
       }
@@ -238,7 +239,7 @@ export default function ClientesPage() {
                       </Badge>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                      <div className="flex items-center justify-end gap-1">
                         <div onClick={e => e.stopPropagation()}>
                           <EditClientDialog client={cliente} onClientUpdated={fetchClientes} />
                         </div>
@@ -247,6 +248,7 @@ export default function ClientesPage() {
                           size="icon-sm" 
                           onClick={(e) => { e.stopPropagation(); handleDeleteClient(cliente.id); }}
                           className="h-8 w-8 text-muted-foreground hover:text-red-400 hover:bg-red-400/10"
+                          title="Borrar cliente"
                         >
                           <Trash2 size={14} />
                         </Button>
