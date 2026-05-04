@@ -24,7 +24,9 @@ export function useOpportunities() {
       if (sbError) throw sbError;
       setOpportunities(data || []);
     } catch (err: any) {
+      console.error("Error fetching opportunities:", err);
       setError(err.message);
+      setOpportunities([]); // Clear on error to avoid stale data
     } finally {
       setLoading(false);
     }
@@ -32,6 +34,19 @@ export function useOpportunities() {
 
   useEffect(() => {
     fetchOpportunities();
+
+    // Safety timeout to prevent infinite loading
+    const safetyTimeout = setTimeout(() => {
+      setLoading(prev => {
+        if (prev) {
+          console.warn("Forcing loading false after 5s timeout in useOpportunities");
+          return false;
+        }
+        return prev;
+      });
+    }, 5000);
+
+    return () => clearTimeout(safetyTimeout);
   }, []);
 
   return { opportunities, loading, error, refresh: fetchOpportunities };

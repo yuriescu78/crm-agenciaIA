@@ -237,9 +237,7 @@ export default function PipelinePage() {
   const [activeOpp, setActiveOpp] = useState<any>(null);
 
   useEffect(() => {
-    if (opportunities.length > 0) {
-      setLocalOpps(opportunities);
-    }
+    setLocalOpps(opportunities);
   }, [opportunities]);
 
   const sensors = useSensors(
