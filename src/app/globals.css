@@ -1,26 +1,186 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-plus-jakarta: "Inter Tight", "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --font-jetbrains-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+  /* Primitives and Semantic Colors */
+  --color-primary-100: oklch(0.96 0.04 258);
+  --color-primary-200: oklch(0.88 0.10 258);
+  --color-primary-300: oklch(0.75 0.18 258);
+  --color-primary-400: oklch(0.62 0.24 258);
+  --color-primary-500: oklch(0.52 0.26 258);
+  --color-primary-600: oklch(0.44 0.26 258);
+  --color-primary-700: oklch(0.36 0.22 258);
+  --color-primary-800: oklch(0.26 0.16 258);
+  --color-primary-900: oklch(0.18 0.10 258);
+
+  --color-amber-100: oklch(0.97 0.04 55);
+  --color-amber-200: oklch(0.92 0.10 50);
+  --color-amber-300: oklch(0.84 0.16 45);
+  --color-amber-400: oklch(0.76 0.20 40);
+  --color-amber-500: oklch(0.68 0.22 38);
+  --color-amber-600: oklch(0.58 0.20 35);
+  --color-amber-700: oklch(0.46 0.17 32);
+
+  --color-neutral-0:   oklch(1.00 0.000 255);
+  --color-neutral-50:  oklch(0.975 0.005 250);
+  --color-neutral-100: oklch(0.955 0.008 255);
+  --color-neutral-200: oklch(0.920 0.010 255);
+  --color-neutral-300: oklch(0.860 0.012 255);
+  --color-neutral-400: oklch(0.720 0.015 255);
+  --color-neutral-500: oklch(0.570 0.018 255);
+  --color-neutral-600: oklch(0.440 0.018 255);
+  --color-neutral-700: oklch(0.310 0.016 255);
+  --color-neutral-800: oklch(0.210 0.014 255);
+  /* NextAdmin Style Dark Theme Variables */
+  --color-background: oklch(0.18 0.02 260); /* #151A22 approx */
+  --color-foreground: oklch(0.96 0.01 260);
+  
+  --color-card: oklch(0.25 0.02 260); /* #1C2434 approx */
+  --color-card-foreground: oklch(0.96 0.01 260);
+  
+  --color-popover: oklch(0.25 0.02 260);
+  --color-popover-foreground: oklch(0.96 0.01 260);
+  
+  --color-primary: oklch(0.55 0.20 270); /* #6366F1 approx */
+  --color-primary-foreground: oklch(1.00 0.000 255);
+  
+  --color-secondary: oklch(0.35 0.02 260);
+  --color-secondary-foreground: oklch(0.96 0.01 260);
+  
+  --color-muted: oklch(0.30 0.02 260);
+  --color-muted-foreground: oklch(0.70 0.02 260); /* #94A3B8 approx */
+  
+  --color-accent: oklch(0.55 0.20 270);
+  --color-accent-foreground: oklch(1.00 0.000 255);
+  
+  --color-destructive: oklch(0.60 0.20 20);
+  --color-destructive-foreground: oklch(1.00 0.000 255);
+  
+  --color-border: oklch(0.35 0.02 260); /* #313D4A approx */
+  --color-input: oklch(0.35 0.02 260);
+  --color-ring: oklch(0.55 0.20 270);
+
+  /* Mapping for neutral palette to be dark bluish-gray by default */
+  --color-neutral-0:   oklch(0.15 0.02 260);
+  --color-neutral-50:  oklch(0.18 0.02 260);
+  --color-neutral-100: oklch(0.25 0.02 260);
+  --color-neutral-200: oklch(0.30 0.02 260);
+  --color-neutral-300: oklch(0.35 0.02 260);
+  --color-neutral-400: oklch(0.50 0.02 260);
+  --color-neutral-500: oklch(0.65 0.02 260); 
+  --color-neutral-600: oklch(0.75 0.02 260);
+  --color-neutral-700: oklch(0.85 0.02 260);
+  --color-neutral-800: oklch(0.92 0.02 260);
+  --color-neutral-900: oklch(0.96 0.01 260);
+  --color-neutral-950: oklch(1.00 0.000 260);
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.5), 0 2px 8px oklch(0 0 0 / 0.4);
+  --shadow-md: 0 1px 3px oklch(0 0 0 / 0.5), 0 4px 16px oklch(0 0 0 / 0.5);
+  --shadow-lg: 0 4px 16px oklch(0 0 0 / 0.6), 0 12px 32px oklch(0 0 0 / 0.6);
+  --shadow-xl: 0 8px 24px oklch(0 0 0 / 0.7), 0 24px 64px oklch(0 0 0 / 0.7);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  @font-face {
+    font-family: 'Inter Tight';
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+    src: url(https://fonts.gstatic.com/s/intertight/v9/NGSyv5HMAFg6IuGlBNMjxLsCwadkREW-emmbxg.woff2) format('woff2');
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  *, ::before, ::after {
+    border-color: var(--color-border);
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: "Inter Tight", var(--font-plus-jakarta);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-neutral-300);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-neutral-400);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .board-scroll::-webkit-scrollbar {
+    height: 8px;
+  }
+  .board-scroll::-webkit-scrollbar-track {
+    background: var(--color-background);
+    border-radius: 10px;
+  }
+  .board-scroll::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 10px;
+    border: 2px solid var(--color-background);
+  }
+  .board-scroll::-webkit-scrollbar-thumb:hover {
+    background: var(--color-muted-foreground);
+  }
+
+  .nc-card {
+    background-color: var(--color-neutral-0);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--color-neutral-100);
+  }
+  .nc-section-title {
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--color-primary-500);
+    margin-bottom: 6px;
+  }
+  .nc-section-name {
+    font-size: 28px;
+    font-weight: 900;
+    color: var(--color-neutral-950);
+    letter-spacing: -0.04em;
+    margin-bottom: 6px;
+    line-height: 1;
+  }
+  .nc-section-desc {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-neutral-400);
+    margin-bottom: 28px;
+  }
 }

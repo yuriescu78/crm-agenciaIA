@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>NexusCRM — Design System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      /* ── PRIMITIVES ── */
+      --color-primary-100: oklch(0.96 0.04 258);
+      --color-primary-200: oklch(0.88 0.10 258);
+      --color-primary-300: oklch(0.75 0.18 258);
+      --color-primary-400: oklch(0.62 0.24 258);
+      --color-primary-500: oklch(0.52 0.26 258);
+      --color-primary-600: oklch(0.44 0.26 258);
+      --color-primary-700: oklch(0.36 0.22 258);
+      --color-primary-800: oklch(0.26 0.16 258);
+      --color-primary-900: oklch(0.18 0.10 258);
+
+      --color-amber-100: oklch(0.97 0.04 55);
+      --color-amber-200: oklch(0.92 0.10 50);
+      --color-amber-300: oklch(0.84 0.16 45);
+      --color-amber-400: oklch(0.76 0.20 40);
+      --color-amber-500: oklch(0.68 0.22 38);
+      --color-amber-600: oklch(0.58 0.20 35);
+      --color-amber-700: oklch(0.46 0.17 32);
+
+      --color-green-100: oklch(0.96 0.04 160);
+      --color-green-500: oklch(0.58 0.18 160);
+      --color-green-600: oklch(0.46 0.18 160);
+
+      --color-red-100: oklch(0.96 0.04 25);
+      --color-red-500: oklch(0.58 0.20 20);
+      --color-red-600: oklch(0.46 0.20 20);
+
+      --color-violet-500: oklch(0.58 0.20 310);
+      --color-teal-500:   oklch(0.58 0.16 195);
+      --color-sky-500:    oklch(0.58 0.18 220);
+
+      --neutral-0:   oklch(1.00 0.000 255);
+      --neutral-50:  oklch(0.975 0.005 250);
+      --neutral-100: oklch(0.955 0.008 255);
+      --neutral-200: oklch(0.920 0.010 255);
+      --neutral-300: oklch(0.860 0.012 255);
+      --neutral-400: oklch(0.720 0.015 255);
+      --neutral-500: oklch(0.570 0.018 255);
+      --neutral-600: oklch(0.440 0.018 255);
+      --neutral-700: oklch(0.310 0.016 255);
+      --neutral-800: oklch(0.210 0.014 255);
+      --neutral-900: oklch(0.130 0.012 255);
+      --neutral-950: oklch(0.090 0.010 250);
+
+      /* ── SEMANTIC ── */
+      --color-bg:         var(--neutral-50);
+      --color-surface:    var(--neutral-0);
+      --color-border:     var(--neutral-200);
+      --color-border-sub: var(--neutral-100);
+      --color-text:       var(--neutral-900);
+      --color-text-sub:   var(--neutral-600);
+      --color-text-muted: var(--neutral-500);
+      --color-accent:     var(--color-primary-500);
+
+      /* ── SIDEBAR ── */
+      --sidebar-bg:       oklch(0.09 0.02 250);
+      --sidebar-hover:    oklch(0.16 0.02 250);
+      --sidebar-active:   var(--color-primary-500);
+      --sidebar-text:     oklch(0.58 0.04 250);
+      --sidebar-width:    240px;
+      --sidebar-collapsed:68px;
+
+      /* ── TOPBAR ── */
+      --topbar-height:    56px;
+
+      /* ── RADIUS ── */
+      --radius-sm:   6px;
+      --radius-md:   10px;
+      --radius-lg:   14px;
+      --radius-xl:   16px;
+      --radius-2xl:  20px;
+      --radius-full: 9999px;
+
+      /* ── SHADOWS ── */
+      --shadow-xs: 0 1px 2px oklch(0 0 0 / 0.05);
+      --shadow-sm: 0 1px 3px oklch(0 0 0 / 0.06), 0 2px 8px oklch(0 0 0 / 0.04);
+      --shadow-md: 0 1px 3px oklch(0 0 0 / 0.06), 0 4px 16px oklch(0 0 0 / 0.05);
+      --shadow-lg: 0 4px 16px oklch(0 0 0 / 0.08), 0 12px 32px oklch(0 0 0 / 0.08);
+      --shadow-xl: 0 8px 24px oklch(0 0 0 / 0.10), 0 24px 64px oklch(0 0 0 / 0.12);
+
+      /* ── SPACING ── */
+      --space-1:  4px;  --space-2:  8px;  --space-3:  12px; --space-4:  16px;
+      --space-5:  20px; --space-6:  24px; --space-7:  28px; --space-8:  32px;
+      --space-10: 40px; --space-12: 48px; --space-16: 64px;
+
+      /* ── TYPOGRAPHY ── */
+      --font-sans: 'Plus Jakarta Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --text-xs:   11px; --text-sm: 12px; --text-base: 13px;
+      --text-md:   14px; --text-lg: 15px; --text-xl:   16px;
+      --text-2xl:  18px; --text-3xl: 22px; --text-4xl: 28px;
+    }
+
+    body { font-family: var(--font-sans); background: var(--neutral-100); color: var(--color-text); line-height: 1.5; }
+    ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-thumb { background: var(--neutral-300); border-radius: 10px; }
+
+    /* Layout */
+    .page { max-width: 1200px; margin: 0 auto; padding: 48px 40px 80px; }
+    .section { margin-bottom: 64px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.10em; color: var(--color-primary-500); margin-bottom: 6px; }
+    .section-name  { font-size: 26px; font-weight: 800; color: var(--neutral-900); letter-spacing: -0.03em; margin-bottom: 6px; }
+    .section-desc  { font-size: 13px; color: var(--color-text-sub); margin-bottom: 28px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+    .card  { background: var(--color-surface); border-radius: var(--radius-xl); padding: 24px; box-shadow: var(--shadow-md); }
+    .label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-text-muted); margin-bottom: 6px; display: block; }
+    .token { font-family: var(--font-mono); font-size: 11px; color: var(--color-text-sub); margin-top: 4px; }
+    code  { font-family: var(--font-mono); font-size: 11px; background: var(--neutral-100); padding: 2px 6px; border-radius: 4px; color: var(--color-primary-600); }
+
+    /* Hero */
+    .hero { background: var(--sidebar-bg); border-radius: 24px; padding: 48px; margin-bottom: 64px; display: flex; align-items: center; gap: 32px; }
+    .logo-mark { width: 64px; height: 64px; border-radius: 16px; background: linear-gradient(135deg, var(--color-primary-500), var(--color-amber-500)); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .hero h1 { font-size: 36px; font-weight: 800; color: white; letter-spacing: -0.04em; }
+    .hero p  { font-size: 14px; color: oklch(0.58 0.04 250); margin-top: 6px; }
+    .hero-tags { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .hero-tag { font-size: 11px; padding: 4px 10px; border-radius: 20px; background: oklch(0.16 0.02 250); color: oklch(0.65 0.04 250); font-weight: 600; }
+
+    /* TOC */
+    .toc { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 56px; }
+    .toc a { font-size: 12px; padding: 6px 14px; border-radius: var(--radius-full); background: var(--color-surface); color: var(--color-text-sub); text-decoration: none; font-weight: 500; box-shadow: var(--shadow-xs); border: 1px solid var(--neutral-200); transition: all 0.12s; }
+    .toc a:hover { background: var(--color-primary-500); color: white; border-color: transparent; }
+
+    /* Color Swatches */
+    .swatch-row { display: flex; gap: 0; border-radius: var(--radius-lg); overflow: hidden; margin-bottom: 12px; }
+    .swatch { flex: 1; height: 56px; display: flex; align-items: flex-end; justify-content: center; padding-bottom: 6px; }
+    .swatch span { font-size: 9px; font-weight: 700; color: white; opacity: 0.8; }
+    .swatch-card { background: var(--color-surface); border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+    .swatch-info { padding: 12px 14px; }
+    .swatch-big { height: 80px; border-radius: var(--radius-lg) var(--radius-lg) 0 0; }
+
+    /* Semantic colors */
+    .sem-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+    .sem-card { border-radius: var(--radius-lg); overflow: hidden; box-shadow: var(--shadow-sm); }
+    .sem-top { height: 60px; }
+    .sem-bot { background: white; padding: 10px 12px; }
+
+    /* Typography */
+    .type-row { padding: 16px 0; border-bottom: 1px solid var(--neutral-100); display: flex; align-items: baseline; gap: 24px; }
+    .type-meta { width: 140px; flex-shrink: 0; }
+
+    /* Spacing viz */
+    .space-row { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
+    .space-bar { background: var(--color-primary-200); border-radius: 3px; height: 24px; }
+
+    /* Shadows */
+    .shadow-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .shadow-item { background: white; border-radius: var(--radius-lg); padding: 24px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+
+    /* Radius */
+    .radius-grid { display: flex; gap: 16px; flex-wrap: wrap; align-items: flex-end; }
+    .radius-item { background: var(--color-primary-100); width: 64px; height: 64px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+
+    /* Components */
+    .comp-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 16px; }
+
+    /* Buttons */
+    .btn { padding: 9px 18px; border-radius: var(--radius-md); border: none; font-family: var(--font-sans); font-size: 13px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.15s; }
+    .btn-primary   { background: var(--color-primary-500); color: white; }
+    .btn-secondary { background: var(--neutral-100); color: var(--neutral-700); border: 1.5px solid var(--neutral-200); }
+    .btn-ghost     { background: transparent; color: var(--color-primary-500); border: 1.5px solid var(--color-primary-500); }
+    .btn-danger    { background: var(--color-red-500); color: white; }
+    .btn-amber     { background: var(--color-amber-500); color: white; }
+    .btn-sm        { padding: 6px 12px; font-size: 12px; border-radius: var(--radius-sm); }
+    .btn-lg        { padding: 12px 24px; font-size: 15px; border-radius: var(--radius-lg); }
+    .btn-icon      { width: 34px; height: 34px; padding: 0; justify-content: center; }
+
+    /* Badges */
+    .badge { font-size: 11px; padding: 3px 10px; border-radius: var(--radius-full); font-weight: 600; display: inline-block; }
+    .badge-active   { background: oklch(0.58 0.18 160 / 0.12); color: oklch(0.38 0.18 160); }
+    .badge-process  { background: oklch(0.52 0.26 258 / 0.12); color: oklch(0.35 0.26 258); }
+    .badge-inactive { background: var(--neutral-100); color: var(--neutral-600); }
+    .badge-high     { background: oklch(0.68 0.22 38 / 0.12); color: oklch(0.48 0.22 38); }
+    .badge-warning  { background: oklch(0.75 0.14 80 / 0.15); color: oklch(0.45 0.14 80); }
+
+    /* Inputs */
+    .inp { padding: 9px 12px; border-radius: var(--radius-md); border: 1.5px solid var(--neutral-200); font-family: var(--font-sans); font-size: 13px; outline: none; color: var(--neutral-800); background: white; width: 220px; transition: border-color 0.15s; }
+    .inp:focus { border-color: var(--color-primary-500); }
+    .inp-error { border-color: var(--color-red-500); }
+
+    /* KPI Card */
+    .kpi { background: white; border-radius: var(--radius-xl); padding: 22px 24px; box-shadow: var(--shadow-md); }
+    .kpi-label { font-size: 13px; color: var(--color-text-sub); font-weight: 500; }
+    .kpi-value { font-size: 30px; font-weight: 700; color: var(--neutral-900); letter-spacing: -0.04em; margin: 10px 0 6px; }
+    .kpi-delta { font-size: 12px; font-weight: 500; display: flex; align-items: center; gap: 4px; }
+    .kpi-icon  { width: 36px; height: 36px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; }
+
+    /* Pipeline Card */
+    .pipeline-card { background: white; border-radius: var(--radius-lg); padding: 14px; box-shadow: var(--shadow-sm); border-left: 3px solid var(--color-primary-500); }
+
+    /* Progress */
+    .progress-track { height: 5px; background: var(--neutral-100); border-radius: var(--radius-full); overflow: hidden; }
+    .progress-fill  { height: 100%; border-radius: var(--radius-full); background: var(--color-primary-500); }
+
+    /* Toggle */
+    .toggle { width: 42px; height: 24px; border-radius: 12px; background: var(--color-primary-500); position: relative; cursor: pointer; }
+    .toggle-off { background: var(--neutral-300); }
+    .toggle-knob { position: absolute; top: 3px; left: 21px; width: 18px; height: 18px; background: white; border-radius: 50%; box-shadow: var(--shadow-xs); }
+    .toggle-knob-off { left: 3px; }
+
+    /* Avatar */
+    .avatar { border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; }
+    .avatar-sm { width: 28px; height: 28px; font-size: 10px; }
+    .avatar-md { width: 36px; height: 36px; font-size: 12px; }
+    .avatar-lg { width: 48px; height: 48px; font-size: 16px; }
+    .avatar-xl { width: 64px; height: 64px; font-size: 22px; }
+
+    /* Table */
+    .tbl { width: 100%; border-collapse: collapse; }
+    .tbl th { padding: 10px 14px; text-align: left; font-size: 11px; font-weight: 700; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--neutral-200); }
+    .tbl td { padding: 12px 14px; font-size: 13px; color: var(--neutral-700); border-bottom: 1px solid var(--neutral-100); }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl tr:hover td { background: var(--neutral-50); }
+
+    /* Layout diagram */
+    .layout-diagram { background: var(--neutral-100); border-radius: var(--radius-xl); overflow: hidden; border: 1px solid var(--neutral-200); }
+    .layout-inner { display: flex; height: 320px; }
+    .layout-sidebar { background: var(--sidebar-bg); width: 180px; flex-shrink: 0; display: flex; flex-direction: column; padding: 16px 12px; gap: 6px; }
+    .layout-main { flex: 1; display: flex; flex-direction: column; }
+    .layout-topbar { height: 44px; background: white; border-bottom: 1px solid var(--neutral-200); display: flex; align-items: center; padding: 0 16px; }
+    .layout-content { flex: 1; background: var(--neutral-50); padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .layout-nav-item { height: 30px; border-radius: 8px; background: oklch(0.16 0.02 250); display: flex; align-items: center; padding: 0 10px; gap: 6px; }
+    .layout-nav-item.active { background: var(--color-primary-500); }
+    .layout-nav-dot { width: 8px; height: 8px; border-radius: 2px; background: oklch(0.40 0.04 250); }
+    .layout-nav-dot.active { background: white; }
+    .layout-nav-line { flex: 1; height: 5px; border-radius: 2px; background: oklch(0.30 0.03 250); }
+    .layout-nav-line.active { background: oklch(0.80 0.10 258); }
+    .layout-card { background: white; border-radius: 10px; box-shadow: var(--shadow-sm); }
+
+    /* Annotation */
+    .ann { font-size: 10px; font-family: var(--font-mono); color: var(--color-primary-600); background: var(--color-primary-100); padding: 2px 6px; border-radius: 4px; display: inline-block; }
+
+    /* Divider */
+    hr { border: none; border-top: 1px solid var(--neutral-200); margin: 32px 0; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="logo-mark">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    </div>
+    <div>
+      <h1>NexusCRM</h1>
+      <p>Design System · v1.0 · Abril 2026</p>
+      <div class="hero-tags">
+        <span class="hero-tag">Plus Jakarta Sans</span>
+        <span class="hero-tag">Cobalt + Amber</span>
+        <span class="hero-tag">oklch color space</span>
+        <span class="hero-tag">React + Babel</span>
+        <span class="hero-tag">CSS inline styles</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOC -->
+  <div class="toc">
+    <a href="#colors">Colores</a>
+    <a href="#typography">Tipografía</a>
+    <a href="#spacing">Espaciado</a>
+    <a href="#radius">Radios</a>
+    <a href="#shadows">Sombras</a>
+    <a href="#buttons">Botones</a>
+    <a href="#badges">Badges</a>
+    <a href="#inputs">Inputs</a>
+    <a href="#cards">Cards</a>
+    <a href="#avatars">Avatares</a>
+    <a href="#table">Tabla</a>
+    <a href="#layout">Layout</a>
+    <a href="#tokens">Tokens CSS</a>
+  </div>
+
+  <!-- ── COLORS ── -->
+  <section class="section" id="colors">
+    <p class="section-title">01 · Fundamentos</p>
+    <h2 class="section-name">Colores</h2>
+    <p class="section-desc">Paleta en espacio oklch para consistencia perceptual. El primario es cobalt eléctrico; el acento es ámbar cálido.</p>
+
+    <!-- Primary -->
+    <span class="label">Primario — Cobalt</span>
+    <div class="swatch-row" style="margin-bottom:4px">
+      <div class="swatch" style="background:oklch(0.96 0.04 258)"><span style="color:oklch(0.40 0.16 258)">100</span></div>
+      <div class="swatch" style="background:oklch(0.88 0.10 258)"><span style="color:oklch(0.35 0.16 258)">200</span></div>
+      <div class="swatch" style="background:oklch(0.75 0.18 258)"><span>300</span></div>
+      <div class="swatch" style="background:oklch(0.62 0.24 258)"><span>400</span></div>
+      <div class="swatch" style="background:oklch(0.52 0.26 258); outline:3px solid oklch(0.52 0.26 258); outline-offset:2px; border-radius:2px"><span>500 ★</span></div>
+      <div class="swatch" style="background:oklch(0.44 0.26 258)"><span>600</span></div>
+      <div class="swatch" style="background:oklch(0.36 0.22 258)"><span>700</span></div>
+      <div class="swatch" style="background:oklch(0.26 0.16 258)"><span>800</span></div>
+      <div class="swatch" style="background:oklch(0.18 0.10 258)"><span>900</span></div>
+    </div>
+    <p class="token" style="margin-bottom:24px">--color-primary-{100…900} · oklch(L C 258)</p>
+
+    <!-- Amber -->
+    <span class="label">Acento — Amber</span>
+    <div class="swatch-row" style="margin-bottom:4px">
+      <div class="swatch" style="background:oklch(0.97 0.04 55)"><span style="color:oklch(0.45 0.16 45)">100</span></div>
+      <div class="swatch" style="background:oklch(0.92 0.10 50)"><span style="color:oklch(0.40 0.16 45)">200</span></div>
+      <div class="swatch" style="background:oklch(0.84 0.16 45)"><span>300</span></div>
+      <div class="swatch" style="background:oklch(0.76 0.20 40)"><span>400</span></div>
+      <div class="swatch" style="background:oklch(0.68 0.22 38); outline:3px solid oklch(0.68 0.22 38); outline-offset:2px; border-radius:2px"><span>500 ★</span></div>
+      <div class="swatch" style="background:oklch(0.58 0.20 35)"><span>600</span></div>
+      <div class="swatch" style="background:oklch(0.46 0.17 32)"><span>700</span></div>
+    </div>
+    <p class="token" style="margin-bottom:24px">--color-amber-{100…700} · oklch(L C 38–55)</p>
+
+    <!-- Neutrals -->
+    <span class="label">Neutrales</span>
+    <div class="swatch-row" style="margin-bottom:4px">
+      <div class="swatch" style="background:white; border:1px solid oklch(0.92 0.01 255)"><span style="color:oklch(0.50 0 0)">0</span></div>
+      <div class="swatch" style="background:oklch(0.975 0.005 250)"><span style="color:oklch(0.50 0 0)">50</span></div>
+      <div class="swatch" style="background:oklch(0.955 0.008 255)"><span style="color:oklch(0.45 0 0)">100</span></div>
+      <div class="swatch" style="background:oklch(0.920 0.010 255)"><span style="color:oklch(0.40 0 0)">200</span></div>
+      <div class="swatch" style="background:oklch(0.860 0.012 255)"><span>300</span></div>
+      <div class="swatch" style="background:oklch(0.720 0.015 255)"><span>400</span></div>
+      <div class="swatch" style="background:oklch(0.570 0.018 255)"><span>500</span></div>
+      <div class="swatch" style="background:oklch(0.440 0.018 255)"><span>600</span></div>
+      <div class="swatch" style="background:oklch(0.310 0.016 255)"><span>700</span></div>
+      <div class="swatch" style="background:oklch(0.210 0.014 255)"><span>800</span></div>
+      <div class="swatch" style="background:oklch(0.130 0.012 255)"><span>900</span></div>
+      <div class="swatch" style="background:oklch(0.090 0.010 250)"><span>950</span></div>
+    </div>
+    <p class="token" style="margin-bottom:24px">--neutral-{0…950} · oklch(L 0.005–0.018 255)</p>
+
+    <!-- Semantic -->
+    <span class="label" style="margin-bottom:12px;display:block">Colores semánticos</span>
+    <div class="sem-grid">
+      <div class="sem-card">
+        <div class="sem-top" style="background:oklch(0.52 0.26 258)"></div>
+        <div class="sem-bot"><p style="font-size:12px;font-weight:700;color:oklch(0.17 0.02 255)">Primary</p><p class="token">--color-accent</p></div>
+      </div>
+      <div class="sem-card">
+        <div class="sem-top" style="background:oklch(0.58 0.18 160)"></div>
+        <div class="sem-bot"><p style="font-size:12px;font-weight:700;color:oklch(0.17 0.02 255)">Success</p><p class="token">--color-green-500</p></div>
+      </div>
+      <div class="sem-card">
+        <div class="sem-top" style="background:oklch(0.68 0.22 38)"></div>
+        <div class="sem-bot"><p style="font-size:12px;font-weight:700;color:oklch(0.17 0.02 255)">Warning</p><p class="token">--color-amber-500</p></div>
+      </div>
+      <div class="sem-card">
+        <div class="sem-top" style="background:oklch(0.58 0.20 20)"></div>
+        <div class="sem-bot"><p style="font-size:12px;font-weight:700;color:oklch(0.17 0.02 255)">Danger</p><p class="token">--color-red-500</p></div>
+      </div>
+    </div>
+
+    <hr/>
+    <span class="label" style="margin-bottom:12px;display:block">Colores auxiliares (gráficas, avatares, tags)</span>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="width:40px;height:40px;border-radius:10px;background:oklch(0.58 0.20 310)"></div>
+        <span class="token">Violeta</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="width:40px;height:40px;border-radius:10px;background:oklch(0.58 0.16 195)"></div>
+        <span class="token">Teal</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="width:40px;height:40px;border-radius:10px;background:oklch(0.58 0.18 220)"></div>
+        <span class="token">Sky</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="width:40px;height:40px;border-radius:10px;background:oklch(0.58 0.18 160)"></div>
+        <span class="token">Verde</span>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+        <div style="width:40px;height:40px;border-radius:10px;background:oklch(0.60 0.15 50)"></div>
+        <span class="token">Naranja</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── TYPOGRAPHY ── -->
+  <section class="section" id="typography">
+    <p class="section-title">02 · Fundamentos</p>
+    <h2 class="section-name">Tipografía</h2>
+    <p class="section-desc">Fuente única: <strong>Plus Jakarta Sans</strong> en todos los pesos. Monoespaciada: <strong>JetBrains Mono</strong> para código y tokens.</p>
+
+    <div class="card">
+      <div class="type-row">
+        <div class="type-meta"><span class="label">Display / H1</span><span class="token">28px · 800 · -0.04em</span></div>
+        <span style="font-size:28px;font-weight:800;letter-spacing:-0.04em;color:var(--neutral-900)">Buenos días, Juan</span>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="label">Heading / H2</span><span class="token">22px · 700 · -0.03em</span></div>
+        <span style="font-size:22px;font-weight:700;letter-spacing:-0.03em;color:var(--neutral-900)">Pipeline de Ventas</span>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="label">Heading / H3</span><span class="token">18px · 700 · -0.02em</span></div>
+        <span style="font-size:18px;font-weight:700;letter-spacing:-0.02em;color:var(--neutral-900)">Clientes recientes</span>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="label">Subtitle</span><span class="token">15px · 600</span></div>
+        <span style="font-size:15px;font-weight:600;color:var(--neutral-800)">Ingresos mensuales</span>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="label">Body · Base</span><span class="token">13px · 400</span></div>
+        <span style="font-size:13px;font-weight:400;color:var(--neutral-700)">Gestión de clientes, pipeline y trabajos en un solo lugar.</span>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="label">Body · Strong</span><span class="token">13px · 600</span></div>
+        <span style="font-size:13px;font-weight:600;color:var(--neutral-800)">Ana García · TechNova SL</span>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="label">Caption</span><span class="token">12px · 500</span></div>
+        <span style="font-size:12px;font-weight:500;color:var(--neutral-600)">Hace 12 minutos · vs mes anterior</span>
+      </div>
+      <div class="type-row">
+        <div class="type-meta"><span class="label">Micro / Label</span><span class="token">11px · 700 · uppercase · 0.06em</span></div>
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--neutral-500)">Estado del cliente</span>
+      </div>
+      <div class="type-row" style="border-bottom:none">
+        <div class="type-meta"><span class="label">Mono</span><span class="token">JetBrains Mono · 11px</span></div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--color-primary-600);background:var(--neutral-100);padding:4px 8px;border-radius:4px">oklch(0.52 0.26 258)</span>
+      </div>
+    </div>
+
+    <hr/>
+    <span class="label">Escala completa</span>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:baseline;margin-top:12px">
+      <span style="font-size:11px;color:var(--neutral-600)">11 · xs</span>
+      <span style="font-size:12px;color:var(--neutral-600)">12 · sm</span>
+      <span style="font-size:13px;color:var(--neutral-700)">13 · base</span>
+      <span style="font-size:14px;color:var(--neutral-700)">14 · md</span>
+      <span style="font-size:15px;color:var(--neutral-800)">15 · lg</span>
+      <span style="font-size:16px;color:var(--neutral-800)">16 · xl</span>
+      <span style="font-size:18px;font-weight:600;color:var(--neutral-900)">18 · 2xl</span>
+      <span style="font-size:22px;font-weight:700;color:var(--neutral-900)">22 · 3xl</span>
+      <span style="font-size:28px;font-weight:800;color:var(--neutral-900)">28 · 4xl</span>
+    </div>
+  </section>
+
+  <!-- ── SPACING ── -->
+  <section class="section" id="spacing">
+    <p class="section-title">03 · Fundamentos</p>
+    <h2 class="section-name">Espaciado</h2>
+    <p class="section-desc">Escala base-4 en píxeles. Todos los paddings, gaps y margins usan estos valores.</p>
+    <div class="card">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:grid;grid-template-columns:80px 1fr 80px;align-items:center;gap:16px;font-size:12px;font-weight:700;color:var(--neutral-500);text-transform:uppercase;letter-spacing:0.06em;padding-bottom:8px;border-bottom:1px solid var(--neutral-100)">
+          <span>Token</span><span>Barra</span><span>Valor</span>
+        </div>
+        ${[['--space-1','4px',4],['--space-2','8px',8],['--space-3','12px',12],['--space-4','16px',16],['--space-5','20px',20],['--space-6','24px',24],['--space-7','28px',28],['--space-8','32px',32],['--space-10','40px',40],['--space-12','48px',48],['--space-16','64px',64]].map(([t,v,px]) => `
+        <div style="display:grid;grid-template-columns:80px 1fr 80px;align-items:center;gap:16px">
+          <code>${t}</code>
+          <div style="background:oklch(0.52 0.26 258 / 0.18);border-radius:3px;height:18px;width:${px * 2.5}px;max-width:100%"></div>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--neutral-600)">${v}</span>
+        </div>`).join('')}
+      </div>
+    </div>
+  </section>
+
+  <!-- ── RADIUS ── -->
+  <section class="section" id="radius">
+    <p class="section-title">04 · Fundamentos</p>
+    <h2 class="section-name">Radios de borde</h2>
+    <p class="section-desc">Bordeos redondeados consistentes para todos los elementos.</p>
+    <div class="card">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-end">
+        ${[['sm','6px','--radius-sm'],['md','10px','--radius-md'],['lg','14px','--radius-lg'],['xl','16px','--radius-xl'],['2xl','20px','--radius-2xl'],['full','9999px','--radius-full']].map(([n,v,t]) => `
+        <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+          <div style="width:64px;height:64px;background:oklch(0.52 0.26 258 / 0.15);border:2px solid oklch(0.52 0.26 258 / 0.4);border-radius:${v}"></div>
+          <span style="font-size:11px;font-weight:700;color:var(--neutral-700)">${n}</span>
+          <code>${v}</code>
+        </div>`).join('')}
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SHADOWS ── -->
+  <section class="section" id="shadows">
+    <p class="section-title">05 · Fundamentos</p>
+    <h2 class="section-name">Sombras</h2>
+    <p class="section-desc">Elevación progresiva. Las cards usan <code>shadow-md</code>, los modales usan <code>shadow-xl</code>.</p>
+    <div class="shadow-grid">
+      ${[
+        ['xs','0 1px 2px oklch(0 0 0 / 0.05)','Botones secundarios, badges'],
+        ['sm','0 1px 3px … 0 2px 8px …','Rows de tabla, items de lista'],
+        ['md','0 1px 3px … 0 4px 16px …','Cards principales, sidebar'],
+        ['lg','0 4px 16px … 0 12px 32px …','Dropdowns, tooltips'],
+        ['xl','0 8px 24px … 0 24px 64px …','Modales, overlays'],
+      ].map(([n,desc,use]) => `
+      <div class="shadow-item" style="box-shadow:var(--shadow-${n})">
+        <code>--shadow-${n}</code>
+        <span style="font-size:11px;color:var(--neutral-500)">${use}</span>
+      </div>`).join('')}
+    </div>
+  </section>
+
+  <!-- ── BUTTONS ── -->
+  <section class="section" id="buttons">
+    <p class="section-title">06 · Componentes</p>
+    <h2 class="section-name">Botones</h2>
+    <p class="section-desc">Padding <code>9px 18px</code> · Radius <code>--radius-md (10px)</code> · Font weight 600 · Transition 150ms</p>
+
+    <div class="card" style="display:flex;flex-direction:column;gap:24px">
+      <div>
+        <span class="label">Variantes</span>
+        <div class="comp-row">
+          <button class="btn btn-primary">Primario</button>
+          <button class="btn btn-secondary">Secundario</button>
+          <button class="btn btn-ghost">Ghost</button>
+          <button class="btn btn-danger">Danger</button>
+          <button class="btn btn-amber">Amber</button>
+        </div>
+      </div>
+      <div>
+        <span class="label">Tamaños</span>
+        <div class="comp-row" style="align-items:center">
+          <button class="btn btn-primary btn-sm">Pequeño</button>
+          <button class="btn btn-primary">Mediano</button>
+          <button class="btn btn-primary btn-lg">Grande</button>
+        </div>
+      </div>
+      <div>
+        <span class="label">Con icono</span>
+        <div class="comp-row">
+          <button class="btn btn-primary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo cliente
+          </button>
+          <button class="btn btn-secondary">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar
+          </button>
+          <button class="btn btn-icon btn-secondary">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </button>
+        </div>
+      </div>
+      <div>
+        <span class="label">Estado deshabilitado</span>
+        <div class="comp-row">
+          <button class="btn btn-primary" style="opacity:0.4;cursor:not-allowed">Primario</button>
+          <button class="btn btn-secondary" style="opacity:0.4;cursor:not-allowed">Secundario</button>
+        </div>
+      </div>
+    </div>
+
+    <hr/>
+    <span class="label">Especificación</span>
+    <div style="background:white;border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-top:10px">
+      <table class="tbl">
+        <thead><tr><th>Variante</th><th>Background</th><th>Color</th><th>Border</th><th>Hover</th></tr></thead>
+        <tbody>
+          <tr><td><code>btn-primary</code></td><td><code>--color-primary-500</code></td><td>white</td><td>none</td><td>--color-primary-600</td></tr>
+          <tr><td><code>btn-secondary</code></td><td><code>--neutral-100</code></td><td>--neutral-700</td><td>--neutral-200</td><td>--neutral-200</td></tr>
+          <tr><td><code>btn-ghost</code></td><td>transparent</td><td>--color-primary-500</td><td>--color-primary-500</td><td>--color-primary-100</td></tr>
+          <tr><td><code>btn-danger</code></td><td><code>--color-red-500</code></td><td>white</td><td>none</td><td>--color-red-600</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── BADGES ── -->
+  <section class="section" id="badges">
+    <p class="section-title">07 · Componentes</p>
+    <h2 class="section-name">Badges y estados</h2>
+    <p class="section-desc">Padding <code>3px 10px</code> · Radius <code>full</code> · Font size 11px · Weight 600</p>
+    <div class="card">
+      <div style="display:flex;gap:20px;flex-wrap:wrap;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span class="label">Estado cliente</span>
+          <span class="badge badge-active">Activo</span>
+          <span class="badge badge-process">En proceso</span>
+          <span class="badge badge-inactive">Inactivo</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span class="label">Prioridad deal</span>
+          <span class="badge badge-high">Alta</span>
+          <span class="badge badge-process">Media</span>
+          <span class="badge badge-inactive">Baja</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span class="label">Estado trabajo</span>
+          <span class="badge" style="background:oklch(0.52 0.26 258/0.12);color:oklch(0.35 0.26 258)">En curso</span>
+          <span class="badge badge-warning">Revisión</span>
+          <span class="badge" style="background:oklch(0.58 0.18 160/0.12);color:oklch(0.35 0.18 160)">Completado</span>
+          <span class="badge badge-inactive">Pendiente</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <span class="label">Contadores</span>
+          <div style="width:20px;height:20px;border-radius:50%;background:var(--color-primary-500);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">3</div>
+          <div style="width:20px;height:20px;border-radius:50%;background:var(--color-amber-500);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center">7</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── INPUTS ── -->
+  <section class="section" id="inputs">
+    <p class="section-title">08 · Componentes</p>
+    <h2 class="section-name">Campos de formulario</h2>
+    <p class="section-desc">Padding <code>9px 12px</code> · Border <code>1.5px solid --neutral-200</code> · Focus: border cambia a <code>--color-primary-500</code></p>
+    <div class="card" style="display:flex;flex-direction:column;gap:20px">
+      <div>
+        <span class="label">Estados</span>
+        <div class="comp-row" style="flex-direction:column;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:12px;font-weight:600;color:var(--neutral-600)">Normal</label>
+            <input class="inp" placeholder="Nombre del cliente"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:12px;font-weight:600;color:var(--color-primary-600)">Focused</label>
+            <input class="inp" value="Ana García" style="border-color:oklch(0.52 0.26 258)"/>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:12px;font-weight:600;color:oklch(0.46 0.20 20)">Error</label>
+            <input class="inp inp-error" value="@email-invalido"/>
+            <span style="font-size:11px;color:oklch(0.46 0.20 20)">Email no válido</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <label style="font-size:12px;font-weight:600;color:var(--neutral-400)">Deshabilitado</label>
+            <input class="inp" disabled value="No editable" style="opacity:0.5;cursor:not-allowed"/>
+          </div>
+        </div>
+      </div>
+      <div>
+        <span class="label">Select</span>
+        <select class="inp" style="cursor:pointer">
+          <option>Activo</option><option>En proceso</option><option>Inactivo</option>
+        </select>
+      </div>
+      <div>
+        <span class="label">Textarea</span>
+        <textarea class="inp" rows="3" placeholder="Descripción del trabajo..." style="resize:vertical;line-height:1.5;width:360px"></textarea>
+      </div>
+      <div>
+        <span class="label">Input con icono prefijo</span>
+        <div style="position:relative;width:220px">
+          <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:oklch(0.57 0.02 255)" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input class="inp" style="padding-left:32px;width:100%" placeholder="Buscar clientes..."/>
+        </div>
+      </div>
+      <div>
+        <span class="label">Toggle</span>
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="toggle"><div class="toggle-knob"></div></div>
+            <span style="font-size:13px;color:var(--neutral-700)">Activado</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div class="toggle toggle-off"><div class="toggle-knob toggle-knob-off"></div></div>
+            <span style="font-size:13px;color:var(--neutral-500)">Desactivado</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── CARDS ── -->
+  <section class="section" id="cards">
+    <p class="section-title">09 · Componentes</p>
+    <h2 class="section-name">Cards</h2>
+    <p class="section-desc">Todos los módulos del dashboard usan variaciones de estas cards.</p>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px">
+
+      <!-- KPI Card -->
+      <div>
+        <span class="label">KPI Card</span>
+        <div class="kpi">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <span class="kpi-label">Ingresos Totales</span>
+            <div class="kpi-icon" style="background:oklch(0.52 0.26 258 / 0.10);color:oklch(0.52 0.26 258)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            </div>
+          </div>
+          <div class="kpi-value">€148,320</div>
+          <div class="kpi-delta" style="color:oklch(0.38 0.18 160)">↑ 12.4% <span style="color:var(--neutral-500);font-weight:400">vs mes anterior</span></div>
+        </div>
+      </div>
+
+      <!-- Pipeline Card -->
+      <div>
+        <span class="label">Pipeline Card</span>
+        <div class="pipeline-card">
+          <div style="display:flex;justify-content:space-between;margin-bottom:8px">
+            <span style="font-size:13px;font-weight:700;color:var(--neutral-900)">TechNova SL</span>
+            <span class="badge badge-high">Alta</span>
+          </div>
+          <div style="font-size:12px;color:var(--neutral-500);margin-bottom:10px">Ana García</div>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-size:14px;font-weight:700;color:var(--neutral-900)">€8,400</span>
+            <span style="font-size:11px;color:var(--neutral-500);display:flex;align-items:center;gap:3px">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>2d
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Job Card -->
+      <div>
+        <span class="label">Trabajo Card</span>
+        <div style="background:white;border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-md)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:10px">
+            <span style="font-size:10px;color:var(--neutral-500);font-weight:700;letter-spacing:0.06em">TRB-001</span>
+            <span class="badge" style="background:oklch(0.52 0.26 258/0.12);color:oklch(0.35 0.26 258)">En curso</span>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:var(--neutral-900);margin-bottom:4px">Desarrollo web TechNova</div>
+          <div style="font-size:12px;color:var(--neutral-500);margin-bottom:12px">TechNova SL</div>
+          <div style="margin-bottom:6px;display:flex;justify-content:space-between">
+            <span style="font-size:11px;color:var(--neutral-500)">Progreso</span>
+            <span style="font-size:11px;font-weight:700;color:var(--neutral-700)">65%</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" style="width:65%"></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px">
+            <div style="width:26px;height:26px;border-radius:50%;background:oklch(0.52 0.26 258);display:flex;align-items:center;justify-content:center;color:white;font-size:10px;font-weight:700">AG</div>
+            <span style="font-size:13px;font-weight:700;color:var(--neutral-900)">€8,400</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── AVATARES ── -->
+  <section class="section" id="avatars">
+    <p class="section-title">10 · Componentes</p>
+    <h2 class="section-name">Avatares</h2>
+    <p class="section-desc">Iniciales 2 letras. Colores asignados por índice de array. Siempre con <code>border-radius: 50%</code>.</p>
+    <div class="card">
+      <div style="display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;margin-bottom:24px">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="avatar avatar-sm" style="background:oklch(0.52 0.26 258)">AG</div>
+          <code>28px</code>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="avatar avatar-md" style="background:oklch(0.68 0.22 38)">CM</div>
+          <code>36px</code>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="avatar avatar-lg" style="background:oklch(0.58 0.18 160)">ST</div>
+          <code>48px</code>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          <div class="avatar avatar-xl" style="background:oklch(0.58 0.20 310)">JR</div>
+          <code>64px</code>
+        </div>
+      </div>
+      <span class="label">Paleta de avatares</span>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        ${['oklch(0.52 0.26 258)','oklch(0.68 0.22 38)','oklch(0.58 0.18 160)','oklch(0.58 0.20 310)','oklch(0.52 0.18 220)','oklch(0.55 0.17 145)','oklch(0.62 0.16 260)','oklch(0.60 0.15 50)'].map((c,i) => `
+        <div class="avatar avatar-md" style="background:${c}">${['AG','CM','ST','LS','JL','EV','PM','MR'][i]}</div>`).join('')}
+      </div>
+      <p class="token" style="margin-top:8px">Asignación: colors[clientIndex % colors.length]</p>
+    </div>
+  </section>
+
+  <!-- ── TABLE ── -->
+  <section class="section" id="table">
+    <p class="section-title">11 · Componentes</p>
+    <h2 class="section-name">Tabla de datos</h2>
+    <p class="section-desc">Header: 11px · 700 · uppercase · neutral-500. Rows: 13px · border-bottom neutral-100. Hover: background neutral-50.</p>
+    <div style="background:white;border-radius:var(--radius-xl);box-shadow:var(--shadow-md);overflow:hidden">
+      <table class="tbl">
+        <thead>
+          <tr><th>Cliente</th><th>Empresa</th><th>Valor</th><th>Estado</th><th></th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar avatar-sm" style="background:oklch(0.52 0.26 258)">AG</div><span style="font-weight:600">Ana García</span></div></td>
+            <td style="color:var(--neutral-600)">TechNova SL</td>
+            <td style="font-weight:700">€12,400</td>
+            <td><span class="badge badge-active">Activo</span></td>
+            <td><button class="btn btn-sm btn-secondary">Ver</button></td>
+          </tr>
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar avatar-sm" style="background:oklch(0.68 0.22 38)">CM</div><span style="font-weight:600">Carlos Méndez</span></div></td>
+            <td style="color:var(--neutral-600)">Grupo Impulso</td>
+            <td style="font-weight:700">€8,750</td>
+            <td><span class="badge badge-process">En proceso</span></td>
+            <td><button class="btn btn-sm btn-secondary">Ver</button></td>
+          </tr>
+          <tr>
+            <td><div style="display:flex;align-items:center;gap:10px"><div class="avatar avatar-sm" style="background:oklch(0.58 0.18 160)">ST</div><span style="font-weight:600">Sofía Torres</span></div></td>
+            <td style="color:var(--neutral-600)">Innova Digital</td>
+            <td style="font-weight:700">€22,100</td>
+            <td><span class="badge badge-active">Activo</span></td>
+            <td><button class="btn btn-sm btn-secondary">Ver</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── LAYOUT ── -->
+  <section class="section" id="layout">
+    <p class="section-title">12 · Layout</p>
+    <h2 class="section-name">Estructura de pantalla</h2>
+    <p class="section-desc">Layout fijo en 2 zonas: sidebar + área principal. El sidebar puede colapsarse a 68px.</p>
+
+    <div class="layout-diagram">
+      <div class="layout-inner">
+        <!-- Sidebar -->
+        <div class="layout-sidebar">
+          <div style="display:flex;align-items:center;gap:8px;padding:4px 0 12px">
+            <div style="width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,oklch(0.52 0.26 258),oklch(0.68 0.22 38));flex-shrink:0"></div>
+            <span style="color:white;font-size:12px;font-weight:700">NexusCRM</span>
+          </div>
+          <div class="layout-nav-item active">
+            <div class="layout-nav-dot active"></div>
+            <div class="layout-nav-line active"></div>
+          </div>
+          <div class="layout-nav-item">
+            <div class="layout-nav-dot"></div>
+            <div class="layout-nav-line"></div>
+          </div>
+          <div class="layout-nav-item">
+            <div class="layout-nav-dot"></div>
+            <div class="layout-nav-line"></div>
+          </div>
+          <div class="layout-nav-item">
+            <div class="layout-nav-dot"></div>
+            <div class="layout-nav-line"></div>
+          </div>
+          <div class="layout-nav-item">
+            <div class="layout-nav-dot"></div>
+            <div class="layout-nav-line"></div>
+          </div>
+        </div>
+        <!-- Main -->
+        <div class="layout-main">
+          <div class="layout-topbar">
+            <div style="height:10px;width:80px;background:var(--neutral-200);border-radius:4px"></div>
+            <div style="margin-left:auto;display:flex;gap:6px">
+              <div style="width:24px;height:24px;border-radius:6px;background:var(--neutral-100)"></div>
+              <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,oklch(0.68 0.22 38),oklch(0.76 0.20 40))"></div>
+            </div>
+          </div>
+          <div class="layout-content">
+            <div class="layout-card" style="grid-column:1/-1;height:40px"></div>
+            <div class="layout-card"></div>
+            <div class="layout-card"></div>
+            <div class="layout-card" style="grid-column:1/-1;height:50px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:16px">
+      ${[
+        ['Sidebar width','240px','--sidebar-width'],
+        ['Sidebar collapsed','68px','--sidebar-collapsed'],
+        ['Topbar height','56px','--topbar-height'],
+        ['Content padding','24px 28px','--space-6 --space-7'],
+        ['Content padding compact','16px 20px','--space-4 --space-5'],
+        ['Card gap','16px','--space-4'],
+      ].map(([n,v,t]) => `
+      <div style="background:white;border-radius:var(--radius-lg);padding:14px;box-shadow:var(--shadow-sm)">
+        <span class="label">${n}</span>
+        <div style="font-size:16px;font-weight:700;color:var(--neutral-900);margin:4px 0">${v}</div>
+        <code>${t}</code>
+      </div>`).join('')}
+    </div>
+  </section>
+
+  <!-- ── TOKENS ── -->
+  <section class="section" id="tokens">
+    <p class="section-title">13 · Referencia</p>
+    <h2 class="section-name">Tokens CSS completos</h2>
+    <p class="section-desc">Pegar en el bloque <code>:root { }</code> de tu stylesheet global.</p>
+    <div style="background:oklch(0.09 0.02 250);border-radius:var(--radius-xl);padding:28px;overflow-x:auto">
+      <pre style="font-family:'JetBrains Mono',monospace;font-size:11.5px;line-height:1.8;color:oklch(0.78 0.04 255);white-space:pre">
+<span style="color:oklch(0.52 0.26 258)">/* ── COLORS ── */</span>
+--color-primary-500:  oklch(0.52 0.26 258);
+--color-primary-600:  oklch(0.44 0.26 258);
+--color-amber-500:    oklch(0.68 0.22 38);
+--color-green-500:    oklch(0.58 0.18 160);
+--color-red-500:      oklch(0.58 0.20 20);
+--color-bg:           oklch(0.975 0.005 250);
+--color-surface:      oklch(1.00  0.000 255);
+--color-border:       oklch(0.920 0.010 255);
+--color-text:         oklch(0.130 0.012 255);
+--color-text-sub:     oklch(0.440 0.018 255);
+--color-text-muted:   oklch(0.570 0.018 255);
+
+<span style="color:oklch(0.68 0.22 38)">/* ── SIDEBAR ── */</span>
+--sidebar-bg:         oklch(0.09 0.02 250);
+--sidebar-hover:      oklch(0.16 0.02 250);
+--sidebar-active:     oklch(0.52 0.26 258);
+--sidebar-text:       oklch(0.58 0.04 250);
+--sidebar-width:      240px;
+--sidebar-collapsed:  68px;
+
+<span style="color:oklch(0.58 0.18 160)">/* ── LAYOUT ── */</span>
+--topbar-height:      56px;
+
+<span style="color:oklch(0.58 0.20 310)">/* ── RADIUS ── */</span>
+--radius-sm:   6px;
+--radius-md:   10px;
+--radius-lg:   14px;
+--radius-xl:   16px;
+--radius-2xl:  20px;
+--radius-full: 9999px;
+
+<span style="color:oklch(0.60 0.15 50)">/* ── SHADOWS ── */</span>
+--shadow-xs: 0 1px 2px oklch(0 0 0 / 0.05);
+--shadow-sm: 0 1px 3px oklch(0 0 0 / 0.06), 0 2px 8px oklch(0 0 0 / 0.04);
+--shadow-md: 0 1px 3px oklch(0 0 0 / 0.06), 0 4px 16px oklch(0 0 0 / 0.05);
+--shadow-lg: 0 4px 16px oklch(0 0 0 / 0.08), 0 12px 32px oklch(0 0 0 / 0.08);
+--shadow-xl: 0 8px 24px oklch(0 0 0 / 0.10), 0 24px 64px oklch(0 0 0 / 0.12);
+
+<span style="color:oklch(0.62 0.04 255)">/* ── SPACING ── */</span>
+--space-1: 4px;   --space-2: 8px;   --space-3: 12px;
+--space-4: 16px;  --space-5: 20px;  --space-6: 24px;
+--space-7: 28px;  --space-8: 32px;  --space-10: 40px;
+--space-12: 48px; --space-16: 64px;
+
+<span style="color:oklch(0.52 0.26 258)">/* ── TYPOGRAPHY ── */</span>
+--font-sans: 'Plus Jakarta Sans', sans-serif;
+--font-mono: 'JetBrains Mono', monospace;
+--text-xs: 11px; --text-sm: 12px; --text-base: 13px;
+--text-md: 14px; --text-lg: 15px; --text-xl: 16px;
+--text-2xl: 18px; --text-3xl: 22px; --text-4xl: 28px;</pre>
+    </div>
+  </section>
+
+  <div style="text-align:center;padding:24px 0;color:var(--neutral-400);font-size:12px">
+    NexusCRM Design System · v1.0 · Abril 2026 · Plus Jakarta Sans + JetBrains Mono
+  </div>
+</div>
+</body>
+</html>

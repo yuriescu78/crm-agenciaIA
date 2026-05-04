@@ -1,0 +1,349 @@
+"use server";
+
+/**
+ * CRM Actions Module
+ * Executes real CRUD operations against Supabase for the Telegram agent.
+ */
+
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+function getSupabaseAdmin() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+  return createSupabaseClient(url, key, {
+    auth: { autoRefreshToken: false, persistSession: false }
+  });
+}
+
+// ============================================================
+// CLIENTS
+// ============================================================
+
+export async function listClients(limit: number = 10): Promise<{ data: any[] | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('clients')
+    .select('id, first_name, last_name, company, email, phone, status')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return { data, error: error?.message || null };
+}
+
+export async function searchClients(query: string): Promise<{ data: any[] | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('clients')
+    .select('id, first_name, last_name, company, email, phone, status')
+    .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,company.ilike.%${query}%,email.ilike.%${query}%`)
+    .order('created_at', { ascending: false })
+    .limit(10);
+  return { data, error: error?.message || null };
+}
+
+export async function getClient(id: string): Promise<{ data: any | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('clients')
+    .select('*')
+    .eq('id', id)
+    .single();
+  return { data, error: error?.message || null };
+}
+
+export async function createClient(clientData: {
+  first_name: string;
+  last_name?: string;
+  company?: string;
+  email?: string;
+  phone?: string;
+  status?: string;
+}): Promise<{ data: any | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('clients')
+    .insert({
+      first_name: clientData.first_name,
+      last_name: clientData.last_name || '',
+      company: clientData.company || '',
+      email: clientData.email || '',
+      phone: clientData.phone || '',
+      status: clientData.status || 'Nuevo',
+    })
+    .select()
+    .single();
+  return { data, error: error?.message || null };
+}
+
+export async function updateClient(id: string, updates: Record<string, any>): Promise<{ data: any | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('clients')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  return { data, error: error?.message || null };
+}
+
+export async function deleteClient(id: string): Promise<{ error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { error } = await db.from('clients').delete().eq('id', id);
+  return { error: error?.message || null };
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+
+export async function listTasks(filters?: { today?: boolean; urgent?: boolean; status?: string }, limit: number = 10): Promise<{ data: any[] | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  let query = db
+    .from('tasks')
+    .select('id, title, description, status, priority, due_date, clients(first_name, last_name)')
+    .neq('status', 'Completada')
+    .order('due_date', { ascending: true })
+    .limit(limit);
+
+  if (filters?.today) {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const todayEnd = new Date();
+    todayEnd.setHours(23, 59, 59, 999);
+    query = query.gte('due_date', todayStart.toISOString()).lte('due_date', todayEnd.toISOString());
+  }
+
+  if (filters?.urgent) {
+    query = query.eq('priority', 'Alta');
+  }
+
+  const { data, error } = await query;
+  return { data, error: error?.message || null };
+}
+
+export async function createTask(taskData: {
+  title: string;
+  description?: string;
+  priority?: string;
+  due_date?: string;
+  client_id?: string;
+  assigned_to?: string;
+}): Promise<{ data: any | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('tasks')
+    .insert({
+      title: taskData.title,
+      description: taskData.description || '',
+      priority: taskData.priority || 'Media',
+      status: 'Pendiente',
+      due_date: taskData.due_date || null,
+      client_id: taskData.client_id || null,
+      assigned_to: taskData.assigned_to || null,
+    })
+    .select()
+    .single();
+  return { data, error: error?.message || null };
+}
+
+export async function updateTask(id: string, updates: Record<string, any>): Promise<{ data: any | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('tasks')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  return { data, error: error?.message || null };
+}
+
+export async function completeTask(id: string): Promise<{ data: any | null; error: string | null }> {
+  return updateTask(id, { status: 'Completada' });
+}
+
+export async function deleteTask(id: string): Promise<{ error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { error } = await db.from('tasks').delete().eq('id', id);
+  return { error: error?.message || null };
+}
+
+// ============================================================
+// CALENDAR EVENTS
+// ============================================================
+
+export async function listEvents(limit: number = 10): Promise<{ data: any[] | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('calendar_events')
+    .select('id, title, description, type, start_at, end_at, status')
+    .gte('start_at', new Date().toISOString())
+    .order('start_at', { ascending: true })
+    .limit(limit);
+  return { data, error: error?.message || null };
+}
+
+export async function createEvent(eventData: {
+  title: string;
+  description?: string;
+  type?: string;
+  start_at: string;
+  end_at: string;
+  client_id?: string;
+  owner_id?: string;
+}): Promise<{ data: any | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('calendar_events')
+    .insert({
+      title: eventData.title,
+      description: eventData.description || '',
+      type: eventData.type || 'Reunión',
+      start_at: eventData.start_at,
+      end_at: eventData.end_at,
+      status: 'Programado',
+      client_id: eventData.client_id || null,
+      owner_id: eventData.owner_id || null,
+    })
+    .select()
+    .single();
+  return { data, error: error?.message || null };
+}
+
+export async function deleteEvent(id: string): Promise<{ error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { error } = await db.from('calendar_events').delete().eq('id', id);
+  return { error: error?.message || null };
+}
+
+// ============================================================
+// PIPELINE / OPPORTUNITIES
+// ============================================================
+
+export async function listOpportunities(limit: number = 10): Promise<{ data: any[] | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('opportunities')
+    .select('id, title, stage, clients(first_name, last_name)')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  return { data, error: error?.message || null };
+}
+
+export async function createOpportunity(oppData: {
+  title: string;
+  stage?: string;
+  client_id?: string;
+  assigned_to?: string;
+}): Promise<{ data: any | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('opportunities')
+    .insert({
+      title: oppData.title,
+      stage: oppData.stage || 'Contacto Inicial',
+      client_id: oppData.client_id || null,
+      assigned_to: oppData.assigned_to || null,
+    })
+    .select()
+    .single();
+  return { data, error: error?.message || null };
+}
+
+export async function updateOpportunity(id: string, updates: Record<string, any>): Promise<{ data: any | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('opportunities')
+    .update(updates)
+    .eq('id', id)
+    .select()
+    .single();
+  return { data, error: error?.message || null };
+}
+
+export async function deleteOpportunity(id: string): Promise<{ error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { error } = await db.from('opportunities').delete().eq('id', id);
+  return { error: error?.message || null };
+}
+
+// ============================================================
+// DAILY SUMMARY
+// ============================================================
+
+export async function getDailySummary(): Promise<string> {
+  const db = getSupabaseAdmin();
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date();
+  todayEnd.setHours(23, 59, 59, 999);
+
+  const [clientsRes, tasksRes, eventsRes, urgentRes] = await Promise.all([
+    db.from('clients').select('id', { count: 'exact', head: true }),
+    db.from('tasks').select('id', { count: 'exact', head: true })
+      .gte('due_date', todayStart.toISOString())
+      .lte('due_date', todayEnd.toISOString())
+      .neq('status', 'Completada'),
+    db.from('calendar_events').select('id', { count: 'exact', head: true })
+      .gte('start_at', todayStart.toISOString())
+      .lte('start_at', todayEnd.toISOString()),
+    db.from('tasks').select('id', { count: 'exact', head: true })
+      .eq('priority', 'Alta')
+      .neq('status', 'Completada'),
+  ]);
+
+  return [
+    `📈 *Resumen del Día — ${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}*`,
+    '',
+    `👥 *Clientes Totales:* ${clientsRes.count || 0}`,
+    `📋 *Tareas para Hoy:* ${tasksRes.count || 0}`,
+    `📅 *Eventos de Hoy:* ${eventsRes.count || 0}`,
+    `🔴 *Tareas Urgentes:* ${urgentRes.count || 0}`,
+  ].join('\n');
+}
+
+// ============================================================
+// TELEGRAM MANAGEMENT
+// ============================================================
+
+export async function generateLinkCode(userId: string): Promise<{ code: string | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+  
+  const { error } = await db
+    .from('telegram_link_codes')
+    .insert({
+      code,
+      user_id: userId,
+      expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString()
+    });
+
+  if (error) return { code: null, error: error.message };
+  return { code, error: null };
+}
+
+export async function listTelegramUsers(): Promise<{ data: any[] | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('telegram_users')
+    .select(`
+      id,
+      telegram_user_id,
+      created_at,
+      user_id,
+      users:user_id (id, email)
+    `)
+    .eq('active', true);
+    
+  return { data, error: error?.message || null };
+}
+
+export async function listTelegramLogs(limit: number = 10): Promise<{ data: any[] | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('telegram_messages')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+    
+  return { data, error: error?.message || null };
+}
