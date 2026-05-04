@@ -47,11 +47,19 @@ export default function ClientesPage() {
   }, []);
 
   const handleDeleteClient = async (id: string) => {
-    if (confirm('¿Estás seguro de que deseas eliminar este cliente? Esta acción no se puede deshacer.')) {
+    if (confirm('¿Estás seguro de que deseas eliminar este cliente y TODOS los datos asociados (tareas, oportunidades, eventos)? Esta acción es irreversible.')) {
+      // Manual cascade delete to ensure no orphan records or FK constraint errors
+      await supabase.from('activities').delete().eq('client_id', id);
+      await supabase.from('calendar_events').delete().eq('client_id', id);
+      await supabase.from('documents').delete().eq('client_id', id);
+      await supabase.from('tasks').delete().eq('client_id', id);
+      await supabase.from('opportunities').delete().eq('client_id', id);
+      
       const { error } = await supabase.from('clients').delete().eq('id', id);
+      
       if (error) {
         console.error("Error deleting client:", error);
-        alert(`No se pudo eliminar el cliente. Es posible que tenga tareas u oportunidades asociadas.\n\nError técnico: ${error.message}`);
+        alert(`No se pudo eliminar el cliente.\n\nError técnico: ${error.message}`);
       } else {
         fetchClientes();
       }

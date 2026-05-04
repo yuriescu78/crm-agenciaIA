@@ -320,13 +320,21 @@ export function buildCrmTools(ctx: ToolContext) {
             message: 'Esta acción no se ejecutará sin confirmación explícita del usuario.',
           };
         }
+        
+        // Manual cascade delete to avoid constraint errors
+        await supabase.from('activities').delete().eq('client_id', clientId);
+        await supabase.from('calendar_events').delete().eq('client_id', clientId);
+        await supabase.from('documents').delete().eq('client_id', clientId);
+        await supabase.from('tasks').delete().eq('client_id', clientId);
+        await supabase.from('opportunities').delete().eq('client_id', clientId);
+
         const { error } = await supabase
           .from('clients')
           .delete()
           .eq('id', clientId);
 
         if (error) return { error: error.message };
-        return { success: true, message: 'Cliente eliminado' };
+        return { success: true, message: 'Cliente y todas sus dependencias (tareas, eventos, oportunidades, etc.) eliminados correctamente' };
       },
     }),
   };
