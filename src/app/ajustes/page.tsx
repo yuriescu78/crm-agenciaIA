@@ -17,14 +17,15 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export const dynamic = "force-dynamic";
 
 export default function AjustesPage() {
+  const { userProfile, loading: authLoading } = useAuth();
   const [activeSection, setActiveSection] = useState('Perfil');
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState({
     name: '',
@@ -32,33 +33,16 @@ export default function AjustesPage() {
     role: ''
   });
 
+  // Sincronizar el estado local con el perfil del contexto cuando cargue
   useEffect(() => {
-    async function loadProfile() {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data, error } = await supabase
-            .from('users')
-            .select('*')
-            .eq('id', user.id)
-            .single();
-          
-          if (data) {
-            setProfile({
-              name: data.name || '',
-              email: data.email || '',
-              role: data.role || 'user'
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error cargando perfil:', error);
-      } finally {
-        setLoading(false);
-      }
+    if (userProfile) {
+      setProfile({
+        name: userProfile.name || '',
+        email: userProfile.email || '',
+        role: userProfile.role || 'user'
+      });
     }
-    loadProfile();
-  }, []);
+  }, [userProfile]);
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -96,7 +80,7 @@ export default function AjustesPage() {
     { title: 'IA & Agentes', icon: Bot, desc: 'Telegram y modelos LLM.', color: 'text-sky-500', bg: 'bg-sky-100' },
   ];
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="h-[60vh] flex items-center justify-center">
         <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
