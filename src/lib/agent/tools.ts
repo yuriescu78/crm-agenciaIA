@@ -204,7 +204,21 @@ export function buildCrmTools(ctx: ToolContext) {
           .single();
 
         if (error) return { error: error.message };
-        return { event: data, message: 'Evento creado correctamente' };
+
+        // Async sync to Google (we don't await to keep bot responsive, but we do for correctness here)
+        const { syncEventToGoogle } = await import('@/lib/google/calendar');
+        const googleSync = await syncEventToGoogle({
+          title: args.title,
+          description: args.description,
+          startAt: args.startAt,
+          endAt: args.endAt
+        });
+
+        return { 
+          event: data, 
+          message: 'Evento creado correctamente' + (googleSync ? ' y sincronizado con Google Calendar' : ''),
+          googleLink: googleSync?.link
+        };
       },
     }),
 
