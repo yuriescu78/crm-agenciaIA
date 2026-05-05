@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import { 
   Settings, 
   User, 
@@ -14,6 +15,7 @@ import {
   Mail
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 export const dynamic = "force-dynamic";
 
