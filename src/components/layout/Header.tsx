@@ -14,9 +14,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAuth } from '@/lib/auth-context';
 
 export function Header() {
   const pathname = usePathname();
+  const { userProfile } = useAuth();
+  
+  const initials = userProfile?.name 
+    ? userProfile.name.substring(0, 2).toUpperCase() 
+    : '??';
   
   const getPageTitle = (path: string) => {
     switch (path) {
@@ -72,7 +78,7 @@ export function Header() {
           <DropdownMenuTrigger 
             render={
               <button className="w-9 h-9 rounded-full bg-gradient-to-tr from-primary to-amber-500 flex items-center justify-center text-white font-bold text-[12px] cursor-pointer ring-2 ring-background shadow-sm hover:scale-105 transition-transform border-0 p-0 outline-none">
-                JR
+                {initials}
               </button>
             } 
           />
