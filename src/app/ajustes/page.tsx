@@ -82,11 +82,11 @@ export default function AjustesPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="nc-label text-[10px]">Nombre Completo</label>
-                      <input defaultValue="Socio Elitor" className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-[13px] font-bold outline-none" />
+                      <input defaultValue="Socio Elitor" className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-[13px] font-bold text-neutral-900 outline-none" />
                     </div>
                     <div className="space-y-1.5">
                       <label className="nc-label text-[10px]">Email</label>
-                      <input defaultValue="socio@elitorsoluciones.es" className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-[13px] font-bold outline-none" />
+                      <input defaultValue="socio@elitorsoluciones.es" className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-[13px] font-bold text-neutral-900 outline-none" />
                     </div>
                   </div>
                 </div>
