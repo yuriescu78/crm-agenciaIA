@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 
 export const dynamic = "force-dynamic";
@@ -31,8 +31,6 @@ export default function AjustesPage() {
     email: '',
     role: ''
   });
-
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     async function loadProfile() {
@@ -60,7 +58,7 @@ export default function AjustesPage() {
       }
     }
     loadProfile();
-  }, [supabase]);
+  }, []);
 
   const handleSaveProfile = async () => {
     setSaving(true);
