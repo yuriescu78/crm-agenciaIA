@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Settings, 
   User, 
@@ -12,15 +12,83 @@ import {
   Bot,
   ChevronRight,
   Globe,
-  Mail
+  Mail,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { toast } from 'sonner';
 
 export const dynamic = "force-dynamic";
 
 export default function AjustesPage() {
   const [activeSection, setActiveSection] = useState('Perfil');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [profile, setProfile] = useState({
+    name: '',
+    email: '',
+    role: ''
+  });
+
+  const supabase = createClientComponentClient();
+
+  useEffect(() => {
+    async function loadProfile() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data, error } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+          
+          if (data) {
+            setProfile({
+              name: data.name || '',
+              email: data.email || '',
+              role: data.role || 'user'
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error cargando perfil:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadProfile();
+  }, [supabase]);
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('No autenticado');
+
+      const { error } = await supabase
+        .from('users')
+        .update({
+          name: profile.name,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      toast.success('Perfil actualizado correctamente', {
+        description: 'Tus cambios se han sincronizado con el sistema.',
+      });
+    } catch (error: any) {
+      toast.error('Error al guardar', {
+        description: error.message
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const sections = [
     { title: 'Perfil', icon: User, desc: 'Información personal y avatar.', color: 'text-primary-500', bg: 'bg-primary-100' },
@@ -29,6 +97,14 @@ export default function AjustesPage() {
     { title: 'Seguridad', icon: Shield, desc: 'Contraseñas y sesiones.', color: 'text-violet-500', bg: 'bg-violet-100' },
     { title: 'IA & Agentes', icon: Bot, desc: 'Telegram y modelos LLM.', color: 'text-sky-500', bg: 'bg-sky-100' },
   ];
+
+  if (loading) {
+    return (
+      <div className="h-[60vh] flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-primary-500 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-[1400px] mx-auto animate-in fade-in duration-500">
@@ -77,23 +153,43 @@ export default function AjustesPage() {
               <p className="text-[13px] text-neutral-500 mb-8">Esta información será visible para el resto del equipo.</p>
               
               <div className="flex flex-col md:flex-row items-center gap-8 mb-10 p-6 bg-neutral-50 rounded-2xl border border-neutral-100">
-                <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-primary-500 to-amber-500 flex items-center justify-center text-white text-3xl font-black shadow-xl ring-4 ring-white">JR</div>
+                <div className="w-24 h-24 rounded-3xl bg-gradient-to-tr from-primary-500 to-amber-500 flex items-center justify-center text-white text-3xl font-black shadow-xl ring-4 ring-white">
+                  {profile.name ? profile.name.substring(0, 2).toUpperCase() : '??'}
+                </div>
                 <div className="space-y-4 flex-1 w-full">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
                       <label className="nc-label text-[10px]">Nombre Completo</label>
-                      <input defaultValue="Socio Elitor" className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-[13px] font-bold text-neutral-900 outline-none" />
+                      <input 
+                        value={profile.name}
+                        onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+                        style={{ color: '#000000' }} 
+                        className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-[13px] font-bold outline-none focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all" 
+                      />
                     </div>
                     <div className="space-y-1.5">
-                      <label className="nc-label text-[10px]">Email</label>
-                      <input defaultValue="socio@elitorsoluciones.es" className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-white text-[13px] font-bold text-neutral-900 outline-none" />
+                      <label className="nc-label text-[10px]">Email (Solo lectura)</label>
+                      <input 
+                        value={profile.email}
+                        readOnly
+                        style={{ color: '#666666' }} 
+                        className="w-full h-10 px-4 rounded-xl border border-neutral-200 bg-neutral-50 text-[13px] font-bold outline-none cursor-not-allowed" 
+                      />
                     </div>
                   </div>
                 </div>
               </div>
 
               <div className="flex justify-end gap-3 pt-6 border-t border-neutral-100">
-                <Button className="nc-btn nc-btn-primary h-11 px-8">Guardar Perfil</Button>
+                <Button 
+                  onClick={handleSaveProfile}
+                  disabled={saving}
+                  className="nc-btn nc-btn-primary h-11 px-8 min-w-[140px]"
+                >
+                  {saving ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Guardando...</>
+                  ) : 'Guardar Perfil'}
+                </Button>
               </div>
             </div>
           )}
