@@ -1,6 +1,7 @@
 "use client";
 
-import { usePathname } from 'next/navigation';
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Search, UserPlus, Menu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { NewClientDialog } from '@/components/clients/NewClientDialog';
@@ -15,10 +16,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/lib/auth-context';
+import { supabase } from '@/lib/supabase';
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { userProfile } = useAuth();
+  
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
   
   const initials = userProfile?.name 
     ? userProfile.name.substring(0, 2).toUpperCase() 
@@ -85,14 +93,21 @@ export function Header() {
           <DropdownMenuContent className="w-56 rounded-md p-2 border-border bg-card shadow-xl">
             <DropdownMenuLabel className="font-bold text-foreground px-2 py-1.5">Mi Cuenta</DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem className="rounded-lg cursor-pointer font-medium text-muted-foreground focus:text-primary focus:bg-primary/10 transition-colors">
-              Perfil
-            </DropdownMenuItem>
-            <DropdownMenuItem className="rounded-lg cursor-pointer font-medium text-muted-foreground focus:text-primary focus:bg-primary/10 transition-colors">
-              Notificaciones
-            </DropdownMenuItem>
+            <Link href="/ajustes">
+              <DropdownMenuItem className="rounded-lg cursor-pointer font-medium text-muted-foreground focus:text-primary focus:bg-primary/10 transition-colors">
+                Perfil
+              </DropdownMenuItem>
+            </Link>
+            <Link href="/ajustes">
+              <DropdownMenuItem className="rounded-lg cursor-pointer font-medium text-muted-foreground focus:text-primary focus:bg-primary/10 transition-colors">
+                Notificaciones
+              </DropdownMenuItem>
+            </Link>
             <DropdownMenuSeparator className="bg-border" />
-            <DropdownMenuItem className="rounded-lg cursor-pointer font-bold text-red-400 focus:text-red-300 focus:bg-red-500/10 transition-colors">
+            <DropdownMenuItem 
+              onClick={handleLogout}
+              className="rounded-lg cursor-pointer font-bold text-red-400 focus:text-red-300 focus:bg-red-500/10 transition-colors"
+            >
               Cerrar Sesión
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -78,16 +78,18 @@ export function Sidebar() {
 
       {/* User Footer */}
       <div className="p-4 mt-auto border-t border-border">
-        <div className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-all group">
-          <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-500 to-amber-500 flex items-center justify-center text-white font-bold text-xs ring-2 ring-border uppercase">
-            {initials}
+        <Link href="/ajustes">
+          <div className="flex items-center gap-3 p-2 rounded-md hover:bg-muted/50 cursor-pointer transition-all group">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-red-500 to-amber-500 flex items-center justify-center text-white font-bold text-xs ring-2 ring-border uppercase">
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-bold text-foreground truncate">{userProfile?.name || 'Usuario'}</p>
+              <p className="text-[10px] font-medium text-muted-foreground truncate capitalize">{userProfile?.role || 'user'}</p>
+            </div>
+            <Settings className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-bold text-foreground truncate">{userProfile?.name || 'Usuario'}</p>
-            <p className="text-[10px] font-medium text-muted-foreground truncate capitalize">{userProfile?.role || 'user'}</p>
-          </div>
-          <Settings className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
-        </div>
+        </Link>
       </div>
     </aside>
   );
