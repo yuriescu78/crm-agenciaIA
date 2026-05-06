@@ -204,7 +204,7 @@ export function NewEventDialog({ children, onEventCreated, defaultDate, event, o
             </label>
             <Select 
               value={formData.client_id} 
-              onValueChange={(val) => setFormData(prev => ({ ...prev, client_id: val === 'none' ? '' : val }))}
+              onValueChange={(val) => setFormData(prev => ({ ...prev, client_id: (val === 'none' || !val) ? '' : val }))}
             >
               <SelectTrigger className="h-11 bg-muted/40 border-border focus:bg-background focus:border-primary transition-all duration-200">
                 <SelectValue placeholder="Selecciona un cliente">

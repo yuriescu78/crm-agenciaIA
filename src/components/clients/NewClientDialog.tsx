@@ -264,7 +264,7 @@ export function NewClientDialog({
               <Select 
                 key={users.length > 0 ? 'loaded' : 'loading'}
                 value={formData.owner_id || "none"} 
-                onValueChange={(val) => setFormData(prev => ({ ...prev, owner_id: val === 'none' ? '' : val }))}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, owner_id: (val === 'none' || !val) ? '' : val }))}
               >
                 <SelectTrigger className="h-12 rounded-xl border-border bg-background focus:ring-1 focus:ring-primary font-bold text-[14px] text-foreground">
                   <SelectValue placeholder="Selecciona un socio">

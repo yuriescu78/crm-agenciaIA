@@ -169,7 +169,7 @@ export function NewTaskDialog({
               <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Asociar a Cliente (Opcional)</label>
               <Select 
                 value={formData.client_id} 
-                onValueChange={(val: string | null) => { if (val) setFormData(prev => ({ ...prev, client_id: val })); }}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, client_id: (val === 'none' || !val) ? '' : val }))}
               >
                 <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
                   <SelectValue placeholder="Selecciona un cliente">
@@ -194,7 +194,7 @@ export function NewTaskDialog({
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Socio Asignado</label>
                 <Select 
                   value={formData.assigned_to || "none"} 
-                  onValueChange={(val) => setFormData(prev => ({ ...prev, assigned_to: val === 'none' ? '' : val }))}
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, assigned_to: (val === 'none' || !val) ? '' : val }))}
                 >
                   <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
                     <SelectValue placeholder="Sin asignar">
@@ -216,7 +216,7 @@ export function NewTaskDialog({
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Estado</label>
                 <Select 
                   value={formData.status} 
-                  onValueChange={(val: string | null) => { if (val) setFormData(prev => ({ ...prev, status: val })); }}
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, status: val || 'Pendiente' }))}
                 >
                   <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
                     <SelectValue placeholder="Estado" />
@@ -233,7 +233,7 @@ export function NewTaskDialog({
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Prioridad</label>
                 <Select 
                   value={formData.priority} 
-                  onValueChange={(val: string | null) => { if (val) setFormData(prev => ({ ...prev, priority: val })); }}
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, priority: val || 'Media' }))}
                 >
                   <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
                     <SelectValue placeholder="Prioridad" />

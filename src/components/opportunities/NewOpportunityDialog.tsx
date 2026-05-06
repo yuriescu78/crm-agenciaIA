@@ -153,7 +153,7 @@ export function NewOpportunityDialog({
               <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Socio Responsable</label>
               <Select 
                 value={formData.owner_id || "none"} 
-                onValueChange={(val) => setFormData(prev => ({ ...prev, owner_id: val === 'none' ? '' : val }))}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, owner_id: (val === 'none' || !val) ? '' : val }))}
               >
                 <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
                   <SelectValue placeholder="Selecciona responsable">
@@ -188,7 +188,7 @@ export function NewOpportunityDialog({
               <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Etapa Inicial</label>
               <Select 
                 value={formData.stage} 
-                onValueChange={(val: string | null) => { if (val) setFormData(prev => ({ ...prev, stage: val })); }}
+                onValueChange={(val) => setFormData(prev => ({ ...prev, stage: val || 'Nuevo lead' }))}
               >
                 <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
                   <SelectValue placeholder="Selecciona etapa" />
