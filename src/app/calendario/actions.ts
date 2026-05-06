@@ -22,10 +22,11 @@ export async function fetchGoogleEventsAction(timeMin: string, timeMax: string) 
     // Merge or enrich google events
     const enrichedEvents = googleEvents.map(ge => {
       // Find a local event that starts at the same time and has same title
-      const match = localEvents?.find(le => 
-        new Date(le.start_at).getTime() === new Date(ge.startAt).getTime() &&
-        le.title === ge.title
-      );
+      const match = localEvents?.find(le => {
+        if (!le.start_at || !ge.startAt) return false;
+        return new Date(le.start_at).getTime() === new Date(ge.startAt).getTime() &&
+               le.title === ge.title;
+      });
 
       if (match) {
         return {
