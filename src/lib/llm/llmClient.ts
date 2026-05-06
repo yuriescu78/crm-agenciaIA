@@ -43,7 +43,7 @@ function resolveModel(overrideIdentifier?: string): LanguageModel {
 export interface ChatOptions {
   system?: string;
   messages: ModelMessage[];
-  tools?: Record<string, Tool>;
+  tools?: Record<string, any>;
   maxSteps?: number;
   temperature?: number;
   modelIdentifier?: string;
