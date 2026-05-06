@@ -1,5 +1,5 @@
 import { google } from 'googleapis';
-import { getAuthorizedCalendar } from '@/lib/google.ts'; // This helper already gets authorized client
+import { getAuthorizedCalendar } from '@/lib/google'; // This helper already gets authorized client
 import { createSupabaseClientForUser } from '@/lib/supabase/client';
 import { Readable } from 'stream';
 
@@ -14,7 +14,7 @@ export async function getAuthorizedDrive() {
   // We need to re-import or use the global oauth2Client from @/lib/google.ts
   // Since @/lib/google.ts exports the client, we can use it.
   const { google: googleApi } = await import('googleapis');
-  const { oauth2Client } = await import('@/lib/google.ts');
+  const { oauth2Client } = await import('@/lib/google');
   
   return googleApi.drive({ version: 'v3', auth: oauth2Client });
 }
