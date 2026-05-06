@@ -6,7 +6,7 @@ import { User } from '@supabase/supabase-js';
 
 type AuthContextType = {
   user: User | null;
-  userProfile: { role: string; name: string } | null;
+  userProfile: { role: string; name: string; email: string } | null;
   loading: boolean;
 };
 
@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUserProfile(null);
       return;
     }
-    const { data } = await supabase.from('users').select('*').eq('id', sessionUser.id).single();
+    const { data } = await supabase.from('users').select('role, name, email').eq('id', sessionUser.id).single();
     if (data) {
       setUserProfile(data);
     }
