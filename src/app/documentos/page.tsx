@@ -168,8 +168,7 @@ export default function DocumentosPage() {
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
           {/* Client Selector */}
-          <div className="lg:col-span-4">
-            <Select value={activeClientId} onValueChange={setActiveClientId}>
+            <Select value={activeClientId} onValueChange={(val) => setActiveClientId(val)}>
               <SelectTrigger className="h-14 rounded-2xl bg-[#141415] border-border/50 px-6 text-[14px] font-bold text-foreground focus:ring-1 focus:ring-primary">
                 <div className="flex items-center gap-3">
                   <Users size={18} className="text-primary" />
