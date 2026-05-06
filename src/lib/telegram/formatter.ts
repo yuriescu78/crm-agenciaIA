@@ -61,11 +61,16 @@ export function formatTaskList(tasks: any[]): string {
  * Format a calendar event for Telegram display.
  */
 export function formatEvent(event: any): string {
-  const startDate = new Date(event.start_at);
-  const endDate = new Date(event.end_at);
+  const startDate = event.start_at ? new Date(event.start_at) : null;
+  const endDate = event.end_at ? new Date(event.end_at) : null;
+  
+  const timeStr = startDate && endDate 
+    ? `🕐 ${startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`
+    : '🕐 Sin horario definido';
+
   return [
     `📅 *${event.title}*`,
-    `🕐 ${startDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })} - ${endDate.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}`,
+    timeStr,
     event.description ? `📝 ${event.description}` : '',
   ]
     .filter(Boolean)
