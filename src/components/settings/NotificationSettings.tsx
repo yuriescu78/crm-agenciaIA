@@ -136,7 +136,7 @@ export function NotificationSettings() {
               Para recibir alertas en tu móvil, vincula tu cuenta de Telegram en la sección "IA & Agentes".
             </p>
             <Link href="/telegram">
-              <Button variant="link" className="p-0 h-auto text-[12px] font-black text-amber-600 mt-2 hover:text-amber-700">
+              <Button variant="ghost" className="p-0 h-auto text-[12px] font-black text-amber-600 mt-2 hover:text-amber-700">
                 Vincular ahora <ChevronRight size={14} className="ml-0.5" />
               </Button>
             </Link>
