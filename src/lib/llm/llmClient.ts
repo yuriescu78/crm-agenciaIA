@@ -25,7 +25,7 @@ function resolveModel(overrideIdentifier?: string): LanguageModel {
       provider = 'groq';
       // Mapear los selectores del UI a modelos reales de Groq
       // Llama 3.1 70B es más estable y rápido que 3.3 para esta integración
-      modelName = overrideIdentifier.includes('70b') ? 'llama-3.1-70b-versatile' : 'llama-3.1-8b-instant';
+      modelName = overrideIdentifier.includes('70b') ? 'llama-3.3-70b-versatile' : 'llama-3.1-8b-instant';
     } else if (overrideIdentifier.startsWith('gpt-')) {
       provider = 'openai';
       modelName = overrideIdentifier;
