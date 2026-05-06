@@ -18,7 +18,7 @@ export function buildCrmTools(ctx: ToolContext) {
       parameters: z.object({
         query: z.string().describe('Texto a buscar'),
         limit: z.number().optional().default(5),
-      })),
+      }),
       execute: async ({ query, limit }) => {
         const { data, error } = await supabase
           .from('clients')
@@ -35,7 +35,7 @@ export function buildCrmTools(ctx: ToolContext) {
       description: 'Lista los clientes más recientes del CRM',
       parameters: z.object({
         limit: z.number().optional().default(10),
-      })),
+      }),
       execute: async ({ limit }) => {
         const { data, error } = await supabase
           .from('clients')
@@ -56,7 +56,7 @@ export function buildCrmTools(ctx: ToolContext) {
         company: z.string().optional().describe('Empresa del cliente'),
         email: z.string().optional().describe('Email del cliente'),
         phone: z.string().optional().describe('Teléfono del cliente'),
-      })),
+      }),
       execute: async (args) => {
         const { data, error } = await supabase
           .from('clients')
@@ -84,7 +84,7 @@ export function buildCrmTools(ctx: ToolContext) {
         priority: z.enum(['Alta', 'Media', 'Baja']).optional().default('Media').describe('Prioridad de la tarea'),
         clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
         dueDate: z.string().optional().describe('Fecha de vencimiento en formato ISO 8601'),
-      })),
+      }),
       execute: async (args) => {
         const { data, error } = await supabase
           .from('tasks')
@@ -111,7 +111,7 @@ export function buildCrmTools(ctx: ToolContext) {
         today: z.boolean().optional().default(false).describe('Solo tareas de hoy'),
         urgent: z.boolean().optional().default(false).describe('Solo tareas urgentes (prioridad Alta)'),
         limit: z.number().optional().default(10),
-      })),
+      }),
       execute: async ({ today, urgent, limit }) => {
         let query = supabase
           .from('tasks')
@@ -145,7 +145,7 @@ export function buildCrmTools(ctx: ToolContext) {
       description: 'Marca una tarea como completada',
       parameters: z.object({
         taskId: z.string().uuid().describe('ID de la tarea a completar'),
-      })),
+      }),
       execute: async ({ taskId }) => {
         const { data, error } = await supabase
           .from('tasks')
@@ -163,7 +163,7 @@ export function buildCrmTools(ctx: ToolContext) {
       description: 'Devuelve los eventos del calendario para una fecha',
       parameters: z.object({
         date: z.string().describe('Fecha en formato YYYY-MM-DD'),
-      })),
+      }),
       execute: async ({ date }) => {
         const { data, error } = await supabase
           .from('calendar_events')
@@ -186,7 +186,7 @@ export function buildCrmTools(ctx: ToolContext) {
         startAt: z.string().describe('Fecha y hora de inicio en ISO 8601'),
         endAt: z.string().describe('Fecha y hora de fin en ISO 8601'),
         clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
-      })),
+      }),
       execute: async (args) => {
         const { data, error } = await supabase
           .from('calendar_events')
@@ -226,7 +226,7 @@ export function buildCrmTools(ctx: ToolContext) {
       description: 'Lista las oportunidades del pipeline comercial',
       parameters: z.object({
         limit: z.number().optional().default(10),
-      })),
+      }),
       execute: async ({ limit }) => {
         const { data, error } = await supabase
           .from('opportunities')
@@ -245,7 +245,7 @@ export function buildCrmTools(ctx: ToolContext) {
         title: z.string().describe('Título de la oportunidad'),
         stage: z.string().optional().default('Contacto Inicial').describe('Etapa del pipeline'),
         clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
-      })),
+      }),
       execute: async (args) => {
         const { data, error } = await supabase
           .from('opportunities')
@@ -268,7 +268,7 @@ export function buildCrmTools(ctx: ToolContext) {
       parameters: z.object({
         opportunityId: z.string().uuid().describe('ID de la oportunidad'),
         stage: z.string().describe('Nueva etapa del pipeline'),
-      })),
+      }),
       execute: async ({ opportunityId, stage }) => {
         const { data, error } = await supabase
           .from('opportunities')
@@ -286,7 +286,7 @@ export function buildCrmTools(ctx: ToolContext) {
       description: 'Obtiene un resumen general del día del usuario actual: clientes, tareas de hoy, eventos y urgencias',
       parameters: z.object({
         filter: z.string().optional().describe('Filtro opcional para el resumen')
-      })),
+      }),
       execute: async () => {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
@@ -331,7 +331,7 @@ export function buildCrmTools(ctx: ToolContext) {
       parameters: z.object({
         clientId: z.string().uuid().describe('ID del cliente a eliminar'),
         confirmed: z.boolean().describe('Solo true si el usuario ha confirmado explícitamente'),
-      })),
+      }),
       execute: async ({ clientId, confirmed }) => {
         if (!confirmed) {
           return {
@@ -362,7 +362,7 @@ export function buildCrmTools(ctx: ToolContext) {
       parameters: z.object({
         unreadOnly: z.boolean().optional().default(true).describe('Si solo debe mostrar no leídas'),
         limit: z.number().optional().default(5),
-      })),
+      }),
       execute: async ({ unreadOnly, limit }) => {
         let query = supabase
           .from('notifications')
@@ -385,7 +385,7 @@ export function buildCrmTools(ctx: ToolContext) {
       parameters: z.object({
         all: z.boolean().optional().default(true).describe('Si se deben marcar todas como leídas'),
         notificationIds: z.array(z.string().uuid()).optional().describe('Lista de IDs específicos a marcar'),
-      })),
+      }),
       execute: async ({ all, notificationIds }) => {
         let query = supabase.from('notifications').update({ read: true });
 
