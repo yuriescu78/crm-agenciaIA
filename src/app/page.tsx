@@ -28,88 +28,82 @@ export default function DashboardPage() {
   const [urgente, setUrgente] = useState<any[]>([]);
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      setLoading(true);
-
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date();
-      todayEnd.setHours(23, 59, 59, 999);
-
-      // 1. Actividad Reciente (Notas de clientes)
-      const { data: notasData } = await supabase
-        .from('client_notes')
-        .select('*, clients(first_name, last_name)')
-        .order('created_at', { ascending: false })
-        .limit(5);
-        
-      // 2. Próximas fechas calendario (Local + Google)
-      const startOfToday = new Date();
-      startOfToday.setHours(0, 0, 0, 0);
-
-      const { data: localCalendarData } = await supabase
-        .from('calendar_events')
-        .select('*')
-        .gte('start_at', startOfToday.toISOString())
-        .order('start_at', { ascending: true })
-        .limit(5);
-
-      let allEvents = localCalendarData || [];
-
       try {
-        console.log("Fetching Google events for dashboard...");
+        const todayStart = new Date();
+        todayStart.setHours(0, 0, 0, 0);
+        const todayEnd = new Date();
+        todayEnd.setHours(23, 59, 59, 999);
+
+        // 1. Actividad Reciente (Notas de clientes)
+        const { data: notasData } = await supabase
+          .from('client_notes')
+          .select('*, clients(first_name, last_name)')
+          .order('created_at', { ascending: false })
+          .limit(5);
+          
+        // 2. Próximas fechas calendario (Local + Google)
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
-        const googleEvents = await fetchGoogleEventsAction(
-          startOfToday.toISOString(),
-          addDays(new Date(), 90).toISOString()
-        );
-        
-        console.log("Fetched Google events:", googleEvents.length);
+        const { data: localCalendarData } = await supabase
+          .from('calendar_events')
+          .select('*')
+          .gte('start_at', startOfToday.toISOString())
+          .order('start_at', { ascending: true })
+          .limit(5);
 
-        const mappedGoogle = googleEvents.map((e: any) => ({
-          id: e.id,
-          title: e.title,
-          start_at: e.startAt,
-          type: 'Google',
-          is_google: true
-        }));
+        let allEvents = localCalendarData || [];
 
-        allEvents = [...allEvents, ...mappedGoogle]
-          .filter(e => e.start_at) // Ensure date exists
-          .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
-          .slice(0, 10); // Show up to 10 upcoming events
+        try {
+          const googleEvents = await fetchGoogleEventsAction(
+            startOfToday.toISOString(),
+            addDays(new Date(), 90).toISOString()
+          );
+          
+          const mappedGoogle = googleEvents.map((e: any) => ({
+            id: e.id,
+            title: e.title,
+            start_at: e.startAt,
+            type: 'Google',
+            is_google: true
+          }));
+
+          allEvents = [...allEvents, ...mappedGoogle]
+            .filter(e => e.start_at)
+            .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
+            .slice(0, 10);
+        } catch (error) {
+          console.error("Error fetching google events", error);
+        }
+
+        // 3. Tareas de hoy
+        const { data: todayTasksData } = await supabase
+          .from('tasks')
+          .select('*, clients(first_name, last_name)')
+          .gte('due_date', todayStart.toISOString())
+          .lte('due_date', todayEnd.toISOString())
+          .neq('status', 'Completada')
+          .order('due_date', { ascending: true })
+          .limit(5);
+
+        // 4. Lo más urgente
+        const { data: urgentTasksData } = await supabase
+          .from('tasks')
+          .select('*, clients(first_name, last_name)')
+          .eq('priority', 'Alta')
+          .neq('status', 'Completada')
+          .order('due_date', { ascending: true })
+          .limit(5);
+
+        if (notasData) setActividad(notasData);
+        setCalendario(allEvents);
+        if (todayTasksData) setTareasHoy(todayTasksData);
+        if (urgentTasksData) setUrgente(urgentTasksData);
       } catch (error) {
-        console.error("Error fetching google events for dashboard", error);
+        console.error("Error loading dashboard data:", error);
+      } finally {
+        setLoading(false);
       }
-
-      // 3. Tareas de hoy
-      const { data: todayTasksData } = await supabase
-        .from('tasks')
-        .select('*, clients(first_name, last_name)')
-        .gte('due_date', todayStart.toISOString())
-        .lte('due_date', todayEnd.toISOString())
-        .neq('status', 'Completada')
-        .order('due_date', { ascending: true })
-        .limit(5);
-
-      // 4. Lo más urgente (Tareas Alta prioridad u Oportunidades en Negociación)
-      const { data: urgentTasksData } = await supabase
-        .from('tasks')
-        .select('*, clients(first_name, last_name)')
-        .eq('priority', 'Alta')
-        .neq('status', 'Completada')
-        .order('due_date', { ascending: true })
-        .limit(5);
-
-      if (notasData) setActividad(notasData);
-      setCalendario(allEvents);
-      if (todayTasksData) setTareasHoy(todayTasksData);
-      if (urgentTasksData) setUrgente(urgentTasksData);
-
-      setLoading(false);
-    };
 
     fetchDashboardData();
   }, []);

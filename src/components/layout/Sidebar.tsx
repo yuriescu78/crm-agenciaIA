@@ -19,7 +19,7 @@ import { useAuth } from '@/lib/auth-context';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { userProfile } = useAuth();
+  const { userProfile, loading } = useAuth();
 
   const initials = userProfile?.name 
     ? userProfile.name.substring(0, 2).toUpperCase() 
@@ -29,13 +29,15 @@ export function Sidebar() {
     { name: 'Dashboard', icon: LayoutDashboard, href: '/' },
     { name: 'Clientes', icon: Users, href: '/clientes' },
     { name: 'Documentos', icon: FileText, href: '/documentos' },
-    ...(userProfile?.role === 'admin' ? [{ name: 'Equipo', icon: Users, href: '/equipo' }] : []),
+    // Only show Team if we are SURE the user is an admin, or show it if loading to avoid flicker (it will hide if not admin later)
+    ...((userProfile?.role === 'admin' || loading) ? [{ name: 'Equipo', icon: Users, href: '/equipo' }] : []),
     { name: 'Pipeline', icon: Split || LayoutDashboard, href: '/pipeline' },
     { name: 'Calendario', icon: Calendar, href: '/calendario' },
     { name: 'Trabajos', icon: CheckSquare, href: '/tareas' },
     { name: 'Telegram', icon: Bot, href: '/telegram' },
     { name: 'Ajustes', icon: Settings, href: '/ajustes' },
   ];
+
 
   return (
     <aside className="hidden lg:flex w-[240px] bg-background text-muted-foreground flex flex-col border-r border-border h-screen sticky top-0">

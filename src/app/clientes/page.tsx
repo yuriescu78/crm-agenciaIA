@@ -33,13 +33,18 @@ export default function ClientesPage() {
 
   const fetchClientes = async () => {
     setLoading(true);
-    const { data, error } = await supabase
-      .from('clients')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-    if (data) setClientes(data);
-    setLoading(false);
+      if (data) setClientes(data);
+    } catch (error) {
+      console.error("Error fetching clients:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -193,8 +198,8 @@ export default function ClientesPage() {
       {/* Desktop View: Table (>= lg) */}
       <div className="hidden lg:block bg-card border border-border shadow-sm rounded-md overflow-hidden">
         <div className="px-6 py-5 border-b border-border flex justify-between items-center">
-          <h2 className="text-lg font-bold text-foreground">Pro Tables</h2>
-          <span className="text-xs text-muted-foreground">Dashboard / Pro Tables</span>
+          <h2 className="text-lg font-bold text-foreground">Listado de Clientes</h2>
+          <span className="text-xs text-muted-foreground">Clientes / Gestionar</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">

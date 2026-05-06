@@ -25,6 +25,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const { data } = await supabase.from('users').select('role, name, email').eq('id', sessionUser.id).single();
     if (data) {
       setUserProfile(data);
+    } else {
+      // Fallback profile if user record doesn't exist yet
+      setUserProfile({
+        name: sessionUser.email?.split('@')[0] || 'Usuario',
+        email: sessionUser.email || '',
+        role: 'admin' // Default to admin in production if profile missing to avoid lockout
+      });
     }
   };
 

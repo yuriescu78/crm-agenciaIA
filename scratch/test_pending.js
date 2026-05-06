@@ -6,21 +6,16 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function testInsert() {
   const testDoc = {
-    client_id: "f2ed6eea-d758-4a17-987e-b22998a61c71", // Abraham
-    name: "TEST_FILE.pdf",
+    client_id: "f2ed6eea-d758-4a17-987e-b22998a61c71",
+    name: "PRUEBA_REAL.pdf",
     type: "pdf",
-    google_drive_id: "test_id_" + Date.now(),
-    status: "Sincronizado"
+    google_drive_id: "id_real_" + Date.now(),
+    status: "Pending" // Valor que pensamos que es correcto
   };
 
-  console.log('Intentando insertar:', testDoc);
   const { data, error } = await supabase.from('documents').insert(testDoc);
-  
-  if (error) {
-    console.error('ERROR AL INSERTAR:', error);
-  } else {
-    console.log('INSERCIÓN EXITOSA:', data);
-  }
+  if (error) console.log('ERROR:', error);
+  else console.log('INSERTADO CON ÉXITO');
 }
 
 testInsert();
