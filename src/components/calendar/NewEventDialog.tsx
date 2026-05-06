@@ -173,7 +173,7 @@ export function NewEventDialog({ children, onEventCreated, defaultDate, event, o
     <Dialog open={open} onOpenChange={setOpen}>
       {children && (
         <DialogTrigger 
-          render={children}
+          render={children as React.ReactElement}
           nativeButton={false}
         />
       )}

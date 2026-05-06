@@ -55,7 +55,7 @@ export function EventDetailsDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       {children && (
         <DialogTrigger 
-          render={children}
+          render={children as React.ReactElement}
           nativeButton={false}
         />
       )}
