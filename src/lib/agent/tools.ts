@@ -5,7 +5,6 @@
  */
 
 import { z } from 'zod';
-import { tool } from 'ai';
 import { createSupabaseClientForUser } from '@/lib/supabase/client';
 import type { ToolContext } from '@/lib/llm/types';
 
@@ -13,13 +12,13 @@ export function buildCrmTools(ctx: ToolContext) {
   const supabase = createSupabaseClientForUser(ctx.crmUserId);
 
   return {
-    search_clients: tool({
+    search_clients: {
       description: 'Busca clientes por nombre, email o empresa',
       parameters: z.object({
         query: z.string().describe('Texto a buscar'),
         limit: z.number().optional().default(5),
       }),
-      execute: async ({ query, limit }) => {
+      execute: async ({ query, limit }: { query: string; limit: number }) => {
         const { data, error } = await supabase
           .from('clients')
           .select('id, first_name, last_name, email, company, phone, status')
@@ -29,14 +28,14 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { clients: data };
       },
-    }),
+    },
 
-    list_clients: tool({
+    list_clients: {
       description: 'Lista los clientes más recientes del CRM',
       parameters: z.object({
         limit: z.number().optional().default(10),
       }),
-      execute: async ({ limit }) => {
+      execute: async ({ limit }: { limit: number }) => {
         const { data, error } = await supabase
           .from('clients')
           .select('id, first_name, last_name, email, company, phone, status')
@@ -46,9 +45,9 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { clients: data };
       },
-    }),
+    },
 
-    create_client: tool({
+    create_client: {
       description: 'Crea un nuevo cliente en el CRM',
       parameters: z.object({
         first_name: z.string().describe('Nombre del cliente'),
@@ -57,7 +56,7 @@ export function buildCrmTools(ctx: ToolContext) {
         email: z.string().optional().describe('Email del cliente'),
         phone: z.string().optional().describe('Teléfono del cliente'),
       }),
-      execute: async (args) => {
+      execute: async (args: any) => {
         const { data, error } = await supabase
           .from('clients')
           .insert({
@@ -74,9 +73,9 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { client: data, message: 'Cliente creado correctamente' };
       },
-    }),
+    },
 
-    create_task: tool({
+    create_task: {
       description: 'Crea una tarea asociada a un cliente o standalone',
       parameters: z.object({
         title: z.string().describe('Título de la tarea'),
@@ -85,7 +84,7 @@ export function buildCrmTools(ctx: ToolContext) {
         clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
         dueDate: z.string().optional().describe('Fecha de vencimiento en formato ISO 8601'),
       }),
-      execute: async (args) => {
+      execute: async (args: any) => {
         const { data, error } = await supabase
           .from('tasks')
           .insert({
@@ -103,16 +102,16 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { task: data, message: 'Tarea creada correctamente' };
       },
-    }),
+    },
 
-    list_tasks: tool({
+    list_tasks: {
       description: 'Lista las tareas pendientes, opcionalmente filtradas por hoy o urgentes',
       parameters: z.object({
         today: z.boolean().optional().default(false).describe('Solo tareas de hoy'),
         urgent: z.boolean().optional().default(false).describe('Solo tareas urgentes (prioridad Alta)'),
         limit: z.number().optional().default(10),
       }),
-      execute: async ({ today, urgent, limit }) => {
+      execute: async ({ today, urgent, limit }: any) => {
         let query = supabase
           .from('tasks')
           .select('id, title, description, status, priority, due_date, clients(first_name, last_name)')
@@ -139,14 +138,14 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { tasks: data };
       },
-    }),
+    },
 
-    complete_task: tool({
+    complete_task: {
       description: 'Marca una tarea como completada',
       parameters: z.object({
         taskId: z.string().uuid().describe('ID de la tarea a completar'),
       }),
-      execute: async ({ taskId }) => {
+      execute: async ({ taskId }: { taskId: string }) => {
         const { data, error } = await supabase
           .from('tasks')
           .update({ status: 'Completada' })
@@ -157,14 +156,14 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { task: data, message: 'Tarea completada' };
       },
-    }),
+    },
 
-    get_agenda: tool({
+    get_agenda: {
       description: 'Devuelve los eventos del calendario para una fecha',
       parameters: z.object({
         date: z.string().describe('Fecha en formato YYYY-MM-DD'),
       }),
-      execute: async ({ date }) => {
+      execute: async ({ date }: { date: string }) => {
         const { data, error } = await supabase
           .from('calendar_events')
           .select('id, title, description, type, start_at, end_at, status, client_id')
@@ -175,9 +174,9 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { events: data };
       },
-    }),
+    },
 
-    create_event: tool({
+    create_event: {
       description: 'Crea un evento en el calendario',
       parameters: z.object({
         title: z.string().describe('Título del evento'),
@@ -187,7 +186,7 @@ export function buildCrmTools(ctx: ToolContext) {
         endAt: z.string().describe('Fecha y hora de fin en ISO 8601'),
         clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
       }),
-      execute: async (args) => {
+      execute: async (args: any) => {
         const { data, error } = await supabase
           .from('calendar_events')
           .insert({
@@ -205,7 +204,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
         if (error) return { error: error.message };
 
-        // Async sync to Google (we don't await to keep bot responsive, but we do for correctness here)
+        // Async sync to Google
         const { syncEventToGoogle } = await import('@/lib/google/calendar');
         const googleSync = await syncEventToGoogle({
           title: args.title,
@@ -220,14 +219,14 @@ export function buildCrmTools(ctx: ToolContext) {
           googleLink: googleSync?.link
         };
       },
-    }),
+    },
 
-    list_opportunities: tool({
+    list_opportunities: {
       description: 'Lista las oportunidades del pipeline comercial',
       parameters: z.object({
         limit: z.number().optional().default(10),
       }),
-      execute: async ({ limit }) => {
+      execute: async ({ limit }: { limit: number }) => {
         const { data, error } = await supabase
           .from('opportunities')
           .select('id, title, stage, clients(first_name, last_name)')
@@ -237,16 +236,16 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { opportunities: data };
       },
-    }),
+    },
 
-    create_opportunity: tool({
+    create_opportunity: {
       description: 'Crea una nueva oportunidad comercial en el pipeline',
       parameters: z.object({
         title: z.string().describe('Título de la oportunidad'),
         stage: z.string().optional().default('Contacto Inicial').describe('Etapa del pipeline'),
         clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
       }),
-      execute: async (args) => {
+      execute: async (args: any) => {
         const { data, error } = await supabase
           .from('opportunities')
           .insert({
@@ -261,15 +260,15 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { opportunity: data, message: 'Oportunidad creada correctamente' };
       },
-    }),
+    },
 
-    update_opportunity_stage: tool({
+    update_opportunity_stage: {
       description: 'Actualiza la etapa de una oportunidad en el pipeline',
       parameters: z.object({
         opportunityId: z.string().uuid().describe('ID de la oportunidad'),
         stage: z.string().describe('Nueva etapa del pipeline'),
       }),
-      execute: async ({ opportunityId, stage }) => {
+      execute: async ({ opportunityId, stage }: { opportunityId: string; stage: string }) => {
         const { data, error } = await supabase
           .from('opportunities')
           .update({ stage })
@@ -280,9 +279,9 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { opportunity: data, message: `Oportunidad movida a: ${stage}` };
       },
-    }),
+    },
 
-    get_daily_summary: tool({
+    get_daily_summary: {
       description: 'Obtiene un resumen general del día del usuario actual: clientes, tareas de hoy, eventos y urgencias',
       parameters: z.object({
         filter: z.string().optional().describe('Filtro opcional para el resumen')
@@ -323,16 +322,15 @@ export function buildCrmTools(ctx: ToolContext) {
           }),
         };
       },
-    }),
+    },
 
-    // Tool destructiva: pide confirmación
-    delete_client: tool({
+    delete_client: {
       description: 'Elimina un cliente. SIEMPRE pide confirmación al usuario antes de ejecutar.',
       parameters: z.object({
         clientId: z.string().uuid().describe('ID del cliente a eliminar'),
         confirmed: z.boolean().describe('Solo true si el usuario ha confirmado explícitamente'),
       }),
-      execute: async ({ clientId, confirmed }) => {
+      execute: async ({ clientId, confirmed }: { clientId: string; confirmed: boolean }) => {
         if (!confirmed) {
           return {
             requiresConfirmation: true,
@@ -340,7 +338,6 @@ export function buildCrmTools(ctx: ToolContext) {
           };
         }
         
-        // Manual cascade delete to avoid constraint errors
         await supabase.from('activities').delete().eq('client_id', clientId);
         await supabase.from('calendar_events').delete().eq('client_id', clientId);
         await supabase.from('documents').delete().eq('client_id', clientId);
@@ -353,17 +350,17 @@ export function buildCrmTools(ctx: ToolContext) {
           .eq('id', clientId);
 
         if (error) return { error: error.message };
-        return { success: true, message: 'Cliente y todas sus dependencias (tareas, eventos, oportunidades, etc.) eliminados correctamente' };
+        return { success: true, message: 'Cliente y todas sus dependencias eliminados correctamente' };
       },
-    }),
+    },
 
-    list_notifications: tool({
+    list_notifications: {
       description: 'Lista las notificaciones más recientes del usuario',
       parameters: z.object({
         unreadOnly: z.boolean().optional().default(true).describe('Si solo debe mostrar no leídas'),
         limit: z.number().optional().default(5),
       }),
-      execute: async ({ unreadOnly, limit }) => {
+      execute: async ({ unreadOnly, limit }: { unreadOnly: boolean; limit: number }) => {
         let query = supabase
           .from('notifications')
           .select('id, title, message, type, created_at, read')
@@ -378,15 +375,15 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { notifications: data };
       },
-    }),
+    },
 
-    mark_notifications_as_read: tool({
+    mark_notifications_as_read: {
       description: 'Marca las notificaciones del usuario como leídas',
       parameters: z.object({
         all: z.boolean().optional().default(true).describe('Si se deben marcar todas como leídas'),
         notificationIds: z.array(z.string().uuid()).optional().describe('Lista de IDs específicos a marcar'),
       }),
-      execute: async ({ all, notificationIds }) => {
+      execute: async ({ all, notificationIds }: { all: boolean; notificationIds?: string[] }) => {
         let query = supabase.from('notifications').update({ read: true });
 
         if (all) {
@@ -401,6 +398,6 @@ export function buildCrmTools(ctx: ToolContext) {
         if (error) return { error: error.message };
         return { success: true, message: 'Notificaciones marcadas como leídas' };
       },
-    }),
-  };
+    },
+  } as const;
 }
