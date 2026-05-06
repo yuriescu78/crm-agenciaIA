@@ -226,7 +226,7 @@ export function SecuritySettings() {
             <div>
               <h4 className="text-[15px] font-bold text-neutral-900">Zona de Peligro</h4>
               <p className="text-[13px] text-neutral-500 mt-1">Si eliminas tu cuenta, todos los datos se borrarán permanentemente y no se podrán recuperar.</p>
-              <Button variant="link" className="mt-4 p-0 h-auto text-[12px] font-bold text-red-600 hover:text-red-700">
+              <Button variant="ghost" className="mt-4 p-0 h-auto text-[12px] font-bold text-red-600 hover:text-red-700">
                 Eliminar mi cuenta
               </Button>
             </div>
