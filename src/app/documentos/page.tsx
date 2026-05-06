@@ -62,9 +62,10 @@ export default function DocumentosPage() {
     if (!activeClientId) return;
     const result = await sync();
     if (result?.success) {
-      toast.success(`Sincronizados ${result.count} archivos correctamente`);
+      const count = (result as any).count || 0;
+      toast.success(`Sincronizados ${count} archivos correctamente`);
     } else {
-      toast.error('Error al sincronizar: ' + result?.error);
+      toast.error('Error al sincronizar: ' + (result as any)?.error);
     }
   };
 
