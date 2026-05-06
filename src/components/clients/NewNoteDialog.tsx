@@ -36,7 +36,7 @@ export function NewNoteDialog({ clientId, onNoteCreated, children }: NewNoteDial
           {
             client_id: clientId,
             content: content.trim(),
-            author_name: 'Equipo Nexus' // Default author for now
+            author_name: 'Equipo ELITOR.IA' // Default author for now
           }
         ]);
 

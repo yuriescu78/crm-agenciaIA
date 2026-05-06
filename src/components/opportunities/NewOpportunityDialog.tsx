@@ -22,6 +22,8 @@ import {
 
 import { supabase } from '@/lib/supabase';
 import { useClients } from '@/hooks/useClients';
+import { useUsers } from '@/hooks/useUsers';
+import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 export function NewOpportunityDialog({ 
@@ -44,6 +46,7 @@ export function NewOpportunityDialog({
   const setOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
   
   const { clients } = useClients();
+  const { users } = useUsers();
   
   const [formData, setFormData] = useState({
     client_id: '',
@@ -51,7 +54,8 @@ export function NewOpportunityDialog({
     estimated_value: '',
     probability: '50',
     stage: 'Nuevo lead',
-    description: ''
+    description: '',
+    owner_id: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -71,7 +75,8 @@ export function NewOpportunityDialog({
           estimated_value: parseFloat(formData.estimated_value) || 0,
           probability: parseInt(formData.probability) || 0,
           stage: formData.stage,
-          description: formData.description
+          description: formData.description,
+          owner_id: formData.owner_id || null
         }]);
 
       if (error) throw error;
@@ -144,6 +149,28 @@ export function NewOpportunityDialog({
               />
             </div>
             
+            <div className="space-y-2">
+              <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Socio Responsable</label>
+              <Select 
+                value={formData.owner_id || "none"} 
+                onValueChange={(val) => setFormData(prev => ({ ...prev, owner_id: val === 'none' ? '' : val }))}
+              >
+                <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
+                  <SelectValue placeholder="Selecciona responsable">
+                    {users.find(u => u.id === formData.owner_id)?.name}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className="bg-card border-border text-foreground">
+                  <SelectItem value="none" className="focus:bg-primary/10 focus:text-primary font-medium">Sin asignar</SelectItem>
+                  {users.map(u => (
+                    <SelectItem key={u.id} value={u.id} className="focus:bg-primary/10 focus:text-primary font-medium">
+                      {u.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Probabilidad de Éxito (%)</label>
               <Input 

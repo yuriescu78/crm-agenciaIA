@@ -44,7 +44,7 @@ export function Sidebar() {
         <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-amber-500 flex items-center justify-center shadow-lg">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
         </div>
-        <span className="text-foreground font-extrabold text-lg tracking-tight">NexusCRM</span>
+        <span className="text-foreground font-extrabold text-lg tracking-tight">ELITOR.IA CRM</span>
       </div>
 
       {/* Navigation */}

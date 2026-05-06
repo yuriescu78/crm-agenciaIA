@@ -17,11 +17,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { userProfile } = useAuth();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -41,18 +43,55 @@ export function Header() {
       case '/tareas': return 'Trabajos';
       case '/telegram': return 'Telegram Chat';
       case '/ajustes': return 'Ajustes';
+      case '/documentos': return 'Documentos';
       default: return 'Detalles';
     }
   };
 
-  return (
-    <header className="h-[56px] bg-card border-b border-border flex items-center px-6 gap-4 sticky top-0 z-40">
-      {/* Mobile Toggle Placeholder */}
-      <button className="lg:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-muted text-muted-foreground hover:bg-muted/80">
-        <Menu size={16} strokeWidth={2.5} />
-      </button>
+  const navItems = [
+    { name: 'Dashboard', href: '/' },
+    { name: 'Clientes', href: '/clientes' },
+    { name: 'Documentos', href: '/documentos' },
+    ...(userProfile?.role === 'admin' ? [{ name: 'Equipo', href: '/equipo' }] : []),
+    { name: 'Pipeline', href: '/pipeline' },
+    { name: 'Calendario', href: '/calendario' },
+    { name: 'Trabajos', href: '/tareas' },
+    { name: 'Telegram', href: '/telegram' },
+    { name: 'Ajustes', href: '/ajustes' },
+  ];
 
-      <span className="text-[15px] font-bold text-foreground">
+  return (
+    <header className="h-[56px] bg-card border-b border-border flex items-center px-4 md:px-6 gap-4 sticky top-0 z-40">
+      {/* Mobile Toggle */}
+      <div className="lg:hidden">
+        <DropdownMenu>
+          <DropdownMenuTrigger 
+            render={
+              <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted text-muted-foreground hover:bg-muted/80 outline-none transition-colors">
+                <Menu size={16} strokeWidth={2.5} />
+              </button>
+            }
+          />
+          <DropdownMenuContent align="start" className="w-56 mt-2 ml-4 rounded-xl border-border bg-card shadow-xl overflow-hidden">
+            <DropdownMenuLabel className="font-bold text-foreground px-3 py-2">Menú</DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-border" />
+            <div className="py-1">
+              {navItems.map((item) => {
+                const isActive = pathname === item.href;
+                return (
+                  <Link key={item.name} href={item.href}>
+                    <DropdownMenuItem className={`mx-1 rounded-md cursor-pointer font-medium px-3 py-2 ${isActive ? 'bg-primary/10 text-primary' : 'text-muted-foreground focus:text-foreground focus:bg-muted/50'}`}>
+                      {item.name}
+                    </DropdownMenuItem>
+                  </Link>
+                );
+              })}
+            </div>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <span className="text-[15px] font-bold text-foreground truncate max-w-[120px] sm:max-w-none">
         {getPageTitle(pathname)}
       </span>
 
@@ -75,10 +114,57 @@ export function Header() {
           </NewClientDialog>
 
           {/* Notif */}
-          <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted relative transition-all">
-            <Bell size={15} />
-            <div className="absolute top-2 right-2.5 w-1.5 h-1.5 rounded-full bg-red-500 border border-card" />
-          </button>
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <button className="h-9 w-9 flex items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:bg-muted relative transition-all outline-none">
+                  <Bell size={15} />
+                  {unreadCount > 0 && (
+                    <div className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-red-500 border-2 border-card flex items-center justify-center text-[9px] text-white font-bold animate-in zoom-in">
+                      {unreadCount}
+                    </div>
+                  )}
+                </button>
+              }
+            />
+            <DropdownMenuContent className="w-80 rounded-xl p-0 border-border bg-card shadow-xl mr-2 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/30">
+                <span className="font-bold text-[13px] text-foreground">Notificaciones</span>
+                {unreadCount > 0 && (
+                  <button onClick={markAllAsRead} className="text-[11px] font-medium text-primary hover:underline">
+                    Marcar todas leídas
+                  </button>
+                )}
+              </div>
+              <div className="max-h-[300px] overflow-y-auto">
+                {notifications.filter(n => !n.read).length === 0 ? (
+                  <div className="px-4 py-8 text-center text-[13px] text-muted-foreground">
+                    No tienes notificaciones pendientes
+                  </div>
+                ) : (
+                  notifications.filter(n => !n.read).map((notif) => (
+                    <div
+                      key={notif.id}
+                      onClick={() => markAsRead(notif.id)}
+                      className="px-4 py-3 border-b border-border last:border-0 cursor-pointer hover:bg-muted/50 transition-colors bg-primary/5"
+                    >
+                      <div className="flex justify-between items-start mb-1 gap-2">
+                        <span className="text-[12px] font-semibold text-primary">
+                          {notif.title}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground whitespace-nowrap mt-0.5">
+                          {new Date(notif.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground line-clamp-2 leading-relaxed">
+                        {notif.message}
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* User Profile Dropdown */}

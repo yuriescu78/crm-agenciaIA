@@ -14,8 +14,9 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
-import { format, isToday, isTomorrow, parseISO } from 'date-fns';
+import { format, isToday, isTomorrow, parseISO, addDays } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { fetchGoogleEventsAction } from './calendario/actions';
 
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -42,13 +43,46 @@ export default function DashboardPage() {
         .order('created_at', { ascending: false })
         .limit(5);
         
-      // 2. Próximas fechas calendario
-      const { data: calendarData } = await supabase
+      // 2. Próximas fechas calendario (Local + Google)
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+
+      const { data: localCalendarData } = await supabase
         .from('calendar_events')
         .select('*')
-        .gte('start_at', new Date().toISOString())
+        .gte('start_at', startOfToday.toISOString())
         .order('start_at', { ascending: true })
         .limit(5);
+
+      let allEvents = localCalendarData || [];
+
+      try {
+        console.log("Fetching Google events for dashboard...");
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const googleEvents = await fetchGoogleEventsAction(
+          startOfToday.toISOString(),
+          addDays(new Date(), 90).toISOString()
+        );
+        
+        console.log("Fetched Google events:", googleEvents.length);
+
+        const mappedGoogle = googleEvents.map((e: any) => ({
+          id: e.id,
+          title: e.title,
+          start_at: e.startAt,
+          type: 'Google',
+          is_google: true
+        }));
+
+        allEvents = [...allEvents, ...mappedGoogle]
+          .filter(e => e.start_at) // Ensure date exists
+          .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
+          .slice(0, 10); // Show up to 10 upcoming events
+      } catch (error) {
+        console.error("Error fetching google events for dashboard", error);
+      }
 
       // 3. Tareas de hoy
       const { data: todayTasksData } = await supabase
@@ -70,7 +104,7 @@ export default function DashboardPage() {
         .limit(5);
 
       if (notasData) setActividad(notasData);
-      if (calendarData) setCalendario(calendarData);
+      setCalendario(allEvents);
       if (todayTasksData) setTareasHoy(todayTasksData);
       if (urgentTasksData) setUrgente(urgentTasksData);
 
@@ -90,11 +124,16 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-4 py-8 animate-in fade-in duration-700">
       {/* Header Section */}
-      <div className="mb-10 flex justify-between items-end">
+      <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-foreground tracking-tight mb-2">Panel de Control</h1>
-          <p className="text-muted-foreground text-[14px] font-medium">Resumen general de tu actividad en NexusCRM.</p>
+          <p className="text-muted-foreground text-[14px] font-medium capitalize">
+            {format(new Date(), "EEEE, d 'de' MMMM 'de' yyyy", { locale: es })}
+          </p>
         </div>
+        <p className="text-muted-foreground text-[13px] font-medium hidden md:block italic bg-muted/30 px-3 py-1 rounded-full border border-border/50">
+          Bienvenido de nuevo, {format(new Date(), "HH:mm")}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -178,7 +217,10 @@ export default function DashboardPage() {
                         </p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="bg-background text-muted-foreground capitalize text-[10px]">
+                    <Badge variant="outline" className={cn(
+                      "bg-background text-muted-foreground capitalize text-[10px]",
+                      evento.is_google && "text-blue-400 border-blue-400/30 bg-blue-500/5"
+                    )}>
                       {evento.type || 'Evento'}
                     </Badge>
                   </div>

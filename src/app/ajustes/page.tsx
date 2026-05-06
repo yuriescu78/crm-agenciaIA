@@ -20,6 +20,9 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/lib/auth-context';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
+import { SecuritySettings } from '@/components/settings/SecuritySettings';
+import { AgentSettings } from '@/components/settings/AgentSettings';
 
 export const dynamic = "force-dynamic";
 
@@ -194,7 +197,7 @@ export default function AjustesPage() {
                 </div>
                 <h4 className="text-md font-bold text-neutral-900 mb-2">Vincular elitoragenciaia@gmail.com</h4>
                 <p className="text-[13px] text-neutral-500 mb-8 max-w-[450px]">
-                  Al conectar, NexusCRM podrá crear eventos en vuestro calendario y carpetas en Drive automáticamente.
+                  Al conectar, ELITOR.IA CRM podrá crear eventos en vuestro calendario y carpetas en Drive automáticamente.
                 </p>
                 
                 <Button 
@@ -207,7 +210,19 @@ export default function AjustesPage() {
             </div>
           )}
 
-          {activeSection !== 'Perfil' && activeSection !== 'Google' && (
+          {activeSection === 'Notificaciones' && (
+            <NotificationSettings />
+          )}
+
+          {activeSection === 'Seguridad' && (
+            <SecuritySettings />
+          )}
+
+          {activeSection === 'IA & Agentes' && (
+            <AgentSettings />
+          )}
+
+          {activeSection !== 'Perfil' && activeSection !== 'Google' && activeSection !== 'Notificaciones' && activeSection !== 'Seguridad' && activeSection !== 'IA & Agentes' && (
             <div className="nc-card py-20 text-center flex flex-col items-center justify-center">
                <div className="p-4 bg-neutral-100 text-neutral-400 rounded-full mb-4">
                   <Settings size={32} />

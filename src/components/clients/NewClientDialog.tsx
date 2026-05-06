@@ -21,6 +21,8 @@ import {
 } from "@/components/ui/select";
 
 import { supabase } from '@/lib/supabase';
+import { useUsers } from '@/hooks/useUsers';
+import { toast } from 'sonner';
 
 export function NewClientDialog({ 
   onClientCreated, 
@@ -52,15 +54,7 @@ export function NewClientDialog({
     summary: '',
     owner_id: ''
   });
-  const [users, setUsers] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (open) {
-      supabase.from('users').select('id, name').then(({ data }) => {
-        if (data) setUsers(data);
-      });
-    }
-  }, [open]);
+  const { users, loading: loadingUsers } = useUsers();
   const [tasks, setTasks] = useState<string[]>([]);
   const [newTask, setNewTask] = useState('');
 
@@ -134,6 +128,10 @@ export function NewClientDialog({
       }
       
       setOpen(false);
+      toast.success("¡Cliente creado con éxito!", {
+        description: `${formData.first_name} ${formData.last_name} ya está en tu base de datos.`
+      });
+      
       setFormData({
         first_name: '',
         last_name: '',
@@ -148,12 +146,20 @@ export function NewClientDialog({
       setTasks([]);
       if (onClientCreated) onClientCreated();
     } catch (err: any) {
-      console.error("Error creating client details (Full Object):", err);
+      console.error("Error detailed:", err);
       
-      const errorMessage = err?.message || err?.details || "Error de red o de configuración";
-      const errorDetails = err?.hint || err?.code || "";
-      
-      alert(`${errorMessage}\n${errorDetails}`);
+      let friendlyMessage = "No hemos podido guardar el cliente";
+      let description = "Por favor, revisa los datos e inténtalo de nuevo.";
+
+      if (err.message?.includes('violates foreign key constraint')) {
+        friendlyMessage = "Problema con el Socio Asignado";
+        description = "El socio seleccionado no parece estar disponible. Intenta seleccionar otro o déjalo en 'Sin asignar'.";
+      } else if (err.message?.includes('email')) {
+        friendlyMessage = "Email duplicado";
+        description = "Ya tienes un cliente registrado con este correo electrónico.";
+      }
+
+      toast.error(friendlyMessage, { description });
     } finally {
       setLoading(false);
     }
@@ -256,16 +262,19 @@ export function NewClientDialog({
             <div className="space-y-2">
               <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Socio Asignado</label>
               <Select 
-                value={formData.owner_id} 
-                onValueChange={(val: string | null) => { const v = val ?? ''; setFormData(prev => ({ ...prev, owner_id: v === 'none' ? '' : v })); }}
+                key={users.length > 0 ? 'loaded' : 'loading'}
+                value={formData.owner_id || "none"} 
+                onValueChange={(val) => setFormData(prev => ({ ...prev, owner_id: val === 'none' ? '' : val }))}
               >
-                <SelectTrigger className="h-12 rounded-xl border-border bg-background focus:ring-1 focus:ring-primary font-bold text-[14px]">
-                  <SelectValue placeholder="Selecciona un socio" />
+                <SelectTrigger className="h-12 rounded-xl border-border bg-background focus:ring-1 focus:ring-primary font-bold text-[14px] text-foreground">
+                  <SelectValue placeholder="Selecciona un socio">
+                    {formData.owner_id ? users.find(u => u.id === formData.owner_id)?.name : 'Sin asignar'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border text-foreground">
-                  <SelectItem value="none" className="focus:bg-primary/10 focus:text-primary">Sin asignar</SelectItem>
+                  <SelectItem value="none" className="focus:bg-primary/10 focus:text-primary font-medium">Sin asignar</SelectItem>
                   {users.map(u => (
-                    <SelectItem key={u.id} value={u.id} className="focus:bg-primary/10 focus:text-primary">
+                    <SelectItem key={u.id} value={u.id} className="focus:bg-primary/10 focus:text-primary font-medium">
                       {u.name}
                     </SelectItem>
                   ))}

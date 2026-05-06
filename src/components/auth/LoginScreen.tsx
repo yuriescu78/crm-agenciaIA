@@ -42,7 +42,7 @@ export function LoginScreen() {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/[0.03] border border-white/10 shadow-2xl mb-6">
             <Lock className="text-primary w-8 h-8" />
           </div>
-          <h1 className="text-3xl font-black text-foreground tracking-tight mb-2">Acceso a Nexus</h1>
+          <h1 className="text-3xl font-black text-foreground tracking-tight mb-2">Acceso a ELITOR.IA</h1>
           <p className="text-muted-foreground font-medium">Panel de gestión estratégica para socios</p>
         </div>
 

@@ -11,7 +11,7 @@ export function AuthWrapper({ children }: { children: React.ReactNode }) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-4" />
-        <p className="text-muted-foreground font-medium text-sm">Iniciando NexusCRM...</p>
+        <p className="text-muted-foreground font-medium text-sm">Iniciando ELITOR.IA CRM...</p>
       </div>
     );
   }

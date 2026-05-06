@@ -193,7 +193,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
   const activityTimeline = [
     ...tasks.map(t => ({ id: `t-${t.id}`, type: 'task', title: `Trabajo asignado: ${t.title}`, desc: `Prioridad ${t.priority}`, date: t.created_at, icon: Briefcase, color: 'text-blue-400 bg-blue-500/10' })),
     ...opportunities.map(o => ({ id: `o-${o.id}`, type: 'opportunity', title: `Nuevo lead: ${o.title}`, desc: `Valor: ${o.estimated_value?.toLocaleString() || 0} €`, date: o.created_at, icon: Target, color: 'text-emerald-400 bg-emerald-500/10' })),
-    ...notes.map(n => ({ id: `n-${n.id}`, type: 'note', title: `Nota de ${n.author_name || 'Equipo Nexus'}`, desc: n.content, date: n.created_at, icon: MessageSquare, color: 'text-amber-400 bg-amber-500/10' }))
+    ...notes.map(n => ({ id: `n-${n.id}`, type: 'note', title: `Nota de ${n.author_name || 'Equipo ELITOR.IA'}`, desc: n.content, date: n.created_at, icon: MessageSquare, color: 'text-amber-400 bg-amber-500/10' }))
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   if (loading || !client) {
@@ -313,7 +313,7 @@ export default function ClientDetailsPage({ params }: { params: Promise<{ id: st
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center justify-between mb-2">
-                                <h4 className="text-[13px] font-bold text-foreground">{note.author_name || 'Equipo Nexus'}</h4>
+                                <h4 className="text-[13px] font-bold text-foreground">{note.author_name || 'Equipo ELITOR.IA'}</h4>
                                 <div className="flex items-center gap-4">
                                   <span className="text-[11px] font-bold text-white/50 uppercase tracking-wide">{formatDate(note.created_at)}</span>
                                   <button 

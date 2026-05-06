@@ -75,7 +75,7 @@ export async function answerCallbackQuery(callbackQueryId: string, text?: string
  * Send the main menu with all available actions.
  */
 export async function sendMainMenu(chatId: string | number): Promise<any> {
-  const text = `🏢 *NexusCRM — Menú Principal*\n\nSelecciona una opción para gestionar tu CRM:`;
+  const text = `🏢 *ELITOR.IA CRM — Menú Principal*\n\nSelecciona una opción para gestionar tu CRM:`;
 
   const buttons = [
     [

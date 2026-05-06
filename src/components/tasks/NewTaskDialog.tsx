@@ -20,6 +20,7 @@ import {
 
 import { supabase } from '@/lib/supabase';
 import { useClients } from '@/hooks/useClients';
+import { useUsers } from '@/hooks/useUsers';
 import { cn } from '@/lib/utils';
 export function NewTaskDialog({ 
   onTaskCreated,
@@ -43,6 +44,7 @@ export function NewTaskDialog({
   const setOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
   
   const { clients } = useClients();
+  const { users } = useUsers();
   
   const [formData, setFormData] = useState({
     client_id: '',
@@ -52,7 +54,8 @@ export function NewTaskDialog({
     due_date: '',
     status: 'Pendiente',
     progress: 0,
-    estimated_value: 0
+    estimated_value: 0,
+    assigned_to: ''
   });
 
   useEffect(() => {
@@ -65,7 +68,8 @@ export function NewTaskDialog({
         due_date: task.due_date ? new Date(task.due_date).toISOString().split('T')[0] : '',
         status: task.status || 'Pendiente',
         progress: task.progress || 0,
-        estimated_value: task.estimated_value || 0
+        estimated_value: task.estimated_value || 0,
+        assigned_to: task.assigned_to || ''
       });
     } else if (!task && open) {
       setFormData({
@@ -76,7 +80,8 @@ export function NewTaskDialog({
         due_date: '',
         status: 'Pendiente',
         progress: 0,
-        estimated_value: 0
+        estimated_value: 0,
+        assigned_to: ''
       });
     }
   }, [task, open]);
@@ -102,7 +107,8 @@ export function NewTaskDialog({
         priority: formData.priority,
         progress: formData.progress,
         estimated_value: formData.estimated_value,
-        due_date: dueDateIso
+        due_date: dueDateIso,
+        assigned_to: formData.assigned_to || null
       };
 
       let error: any;
@@ -184,6 +190,28 @@ export function NewTaskDialog({
             </div>
             
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Socio Asignado</label>
+                <Select 
+                  value={formData.assigned_to || "none"} 
+                  onValueChange={(val) => setFormData(prev => ({ ...prev, assigned_to: val === 'none' ? '' : val }))}
+                >
+                  <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
+                    <SelectValue placeholder="Sin asignar">
+                      {users.find(u => u.id === formData.assigned_to)?.name}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border text-foreground">
+                    <SelectItem value="none" className="focus:bg-primary/10 focus:text-primary font-medium">Sin asignar</SelectItem>
+                    {users.map(u => (
+                      <SelectItem key={u.id} value={u.id} className="focus:bg-primary/10 focus:text-primary font-medium">
+                        {u.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Estado</label>
                 <Select 

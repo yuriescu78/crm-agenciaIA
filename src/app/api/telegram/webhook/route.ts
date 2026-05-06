@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { processUserMessage } from '@/lib/agent/runner';
 import { sendTelegramMessage } from '@/lib/telegram/handler';
 import { authorizeTelegramUser, linkTelegramUser } from '@/lib/telegram/auth';
+import { getUnreadNotificationsForTelegram, markAllAsRead } from '@/lib/telegram/notifications';
 
 export async function POST(req: Request) {
   try {
@@ -62,7 +63,7 @@ export async function POST(req: Request) {
       if (text === '/start') {
         await sendTelegramMessage(
           chatId,
-          '👋 ¡Hola! Soy el asistente de NexusCRM.\n\n' +
+          '👋 ¡Hola! Soy el asistente de ELITOR.IA CRM.\n\n' +
           'Para empezar, necesitas vincular tu cuenta. ' +
           'Genera un código en la web y envíamelo con:\n\n' +
           '`/vincular TU_CODIGO`\n\n' +
@@ -108,10 +109,23 @@ export async function POST(req: Request) {
       if (!auth) {
         await sendTelegramMessage(
           chatId,
-          '🔒 [NexusCRM] Tu cuenta de Telegram no está vinculada al sistema.\n\n' +
+          '🔒 [ELITOR.IA CRM] Tu cuenta de Telegram no está vinculada al sistema.\n\n' +
           'Genera un código en la sección "Telegram" de la web y envíamelo aquí con este formato:\n\n' +
           '`/vincular TU_CODIGO`'
         );
+        return NextResponse.json({ ok: true });
+      }
+
+      // Handle specific commands after authorization
+      if (text === '/notificaciones') {
+        const response = await getUnreadNotificationsForTelegram(auth.crmUserId);
+        await sendTelegramMessage(chatId, response);
+        return NextResponse.json({ ok: true });
+      }
+
+      if (text === '/leidas') {
+        const response = await markAllAsRead(auth.crmUserId);
+        await sendTelegramMessage(chatId, response);
         return NextResponse.json({ ok: true });
       }
 
@@ -137,7 +151,7 @@ export async function POST(req: Request) {
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
-    service: 'NexusCRM Telegram Bot',
+    service: 'ELITOR.IA CRM Telegram Bot',
     provider: process.env.LLM_PROVIDER || 'groq',
     model: process.env.LLM_MODEL || 'llama-3.3-70b-versatile',
   });

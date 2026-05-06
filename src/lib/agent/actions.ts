@@ -347,3 +347,96 @@ export async function listTelegramLogs(limit: number = 10): Promise<{ data: any[
     
   return { data, error: error?.message || null };
 }
+
+// ============================================================
+// AGENT CONFIGURATION
+// ============================================================
+
+export async function getAgentConfig(userId: string): Promise<any | null> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('users')
+    .select('agent_config')
+    .eq('id', userId)
+    .single();
+    
+  if (error || !data) return null;
+  return data.agent_config;
+}
+
+export async function syncGoogleDrive(clientId: string): Promise<{ success: boolean; count?: number; error?: string }> {
+  try {
+    const { syncFolderFiles } = await import('@/lib/google/drive');
+    const result = await syncFolderFiles(clientId);
+    
+    if ('error' in result) {
+      return { success: false, error: result.error };
+    }
+    
+    return { success: true, count: result.count };
+  } catch (error: any) {
+    console.error('Error in syncGoogleDrive action:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function listDocuments(clientId: string): Promise<{ data: any[] | null; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('documents')
+    .select('*')
+    .eq('client_id', clientId)
+    .order('created_at', { ascending: false });
+    
+  return { data, error: error?.message || null };
+}
+
+export async function deleteDocument(documentId: string): Promise<{ success: boolean; error: string | null }> {
+  const db = getSupabaseAdmin();
+  const { error } = await db
+    .from('documents')
+    .delete()
+    .eq('id', documentId);
+    
+  return { success: !error, error: error?.message || null };
+}
+
+export async function checkGoogleConnection(): Promise<boolean> {
+  const db = getSupabaseAdmin();
+  const { data, error } = await db
+    .from('google_tokens')
+    .select('refresh_token')
+    .eq('account_email', 'elitoragenciaia@gmail.com')
+    .single();
+
+  if (error || !data || !data.refresh_token) {
+    return false;
+  }
+  return true;
+}
+
+export async function uploadDocument(clientId: string, formData: FormData): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const file = formData.get('file') as File;
+    if (!file) return { success: false, error: 'No se encontró el archivo' };
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const { uploadFileToDrive, syncFolderFiles } = await import('@/lib/google/drive');
+    const result = await uploadFileToDrive(clientId, {
+      name: file.name,
+      mimeType: file.type,
+      body: buffer
+    });
+
+    // Automatically sync after upload to update the database
+    await syncFolderFiles(clientId);
+
+    return { success: true, data: result };
+  } catch (error: any) {
+    console.error('Error in uploadDocument action:', error);
+    return { success: false, error: error.message };
+  }
+}
+

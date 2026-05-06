@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NexusCRM | Agencia de Alto Impacto",
+  title: "ELITOR.IA CRM | Agencia de Alto Impacto",
   description: "Sistema inteligente de gestión de clientes y proyectos mediante IA.",
 };
 

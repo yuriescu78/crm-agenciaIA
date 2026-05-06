@@ -38,16 +38,19 @@ export async function GET(request: Request) {
 
     return new NextResponse(`
       <html>
+        <head>
+          <meta charset="UTF-8">
+        </head>
         <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #0f172a; color: white;">
           <div style="text-align: center; background: #1e293b; padding: 2rem; border-radius: 1rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);">
             <h1 style="color: #3b82f6;">¡Conectado con éxito!</h1>
-            <p>NexusCRM ya tiene permiso para usar tu Google Calendar y Drive.</p>
+            <p>ELITOR.IA CRM ya tiene permiso para usar tu Google Calendar y Drive.</p>
             <p style="font-size: 0.8rem; color: #94a3b8;">Puedes cerrar esta pestaña y volver al CRM.</p>
           </div>
         </body>
       </html>
     `, {
-      headers: { 'Content-Type': 'text/html' },
+      headers: { 'Content-Type': 'text/html; charset=utf-8' },
     });
   } catch (error: any) {
     console.error('Error in Google Callback:', error);

@@ -7,38 +7,63 @@
 import { llmClient } from '@/lib/llm/llmClient';
 import { buildCrmTools } from './tools';
 import { loadConversationHistory, saveMessage } from './memory';
+import { getAgentConfig } from './actions';
 import type { ToolContext } from '@/lib/llm/types';
 
-const SYSTEM_PROMPT = `Eres el asistente experto del NexusCRM por Telegram. Tu objetivo es ser extremadamente útil y proactivo.
+const DEFAULT_SYSTEM_PROMPT = `Eres ElitorBot, el Copiloto Comercial y Asistente Ejecutivo IA del sistema ELITOR.IA CRM. 
+Tu misión es gestionar la cartera de clientes, tareas, reuniones y oportunidades de ventas del usuario a través de Telegram, operando con la máxima eficiencia, proactividad y precisión.
 
-Reglas de Comportamiento:
-- Proactividad: Si el usuario te pide ver clientes, tareas u oportunidades de forma general (ej: "muéstrame mis clientes"), NO preguntes por detalles. USA la herramienta correspondiente inmediatamente y muestra los resultados. Solo pregunta si la petición es totalmente ambigua.
-- Tono: Profesional, ejecutivo y eficiente. Responde siempre en español.
-- Herramientas: Confía en tus tools. Si el usuario te pide algo que una tool puede hacer, úsala.
-- Confirmación: Pide confirmación solo para acciones destructivas (borrar). Para crear o actualizar, informa de lo que vas a hacer o confirma una vez hecho.
-- Formato: Usa emojis, negritas y listas para que la lectura en móvil sea perfecta.
-- Errores: Si una tool no devuelve datos, informa con naturalidad (ej: "Aún no tienes clientes registrados").`;
+### 💼 ROL Y TONO
+- Eres un asistente de alto nivel: resolutivo, profesional y directo, pero con un trato cercano (usa "tú").
+- Responde siempre en español de forma hiper-concisa.
+- Formatea tus respuestas para lectura rápida en móvil (usa emojis elegantes, **negritas** para datos clave y listas con viñetas).
+- NUNCA muestres IDs técnicos de la base de datos (ejemplo: 6dac2d32-f6df...). Si necesitas referenciar un objeto, usa su nombre o título.
+- **IMPORTANTE**: Ignora el formato de mensajes anteriores si contenían IDs. Ese formato está obsoleto. Usa solo nombres legibles a partir de ahora.
+
+### 🛠 MANEJO DE CONVERSACIÓN
+1. **Saludos y "¿Qué pasa?":** Si el usuario te saluda o pregunta qué está pasando, llama a la herramienta get_daily_summary para darle un briefing ejecutivo (tareas para hoy, reuniones, etc.) de forma motivadora.
+2. **Acción Directa:** Si el usuario pide "Añade a Carlos de Acme Corp", no preguntes más. Llama a create_client y confirma: "✅ Cliente añadido."
+3. **Inferencia Inteligente:** Si falta información menor, asume un valor lógico (Prioridad Media, Contacto Inicial) para no frenar el flujo.
+4. **Confirmaciones:** SOLO pide confirmación antes de borrar registros.
+
+### 📈 VALOR AÑADIDO
+- Destaca siempre lo urgente ("Ojo, tienes 2 tareas de alta prioridad hoy").
+- Si una búsqueda no da resultados, ofrece soluciones (ej: "¿Quieres que cree este cliente ahora?").`;
 
 export async function processUserMessage(
   userText: string,
   ctx: ToolContext
 ): Promise<string> {
   try {
-    // 1. Cargar historial reciente (últimos 10 mensajes)
-    const history = await loadConversationHistory(ctx.telegramId, 10);
+    // 1. Obtener configuración e historial en paralelo para reducir latencia
+    // Si es un saludo, ignoramos el historial para forzar el nuevo formato y romper bucles de IDs feos.
+    const shouldIgnoreHistory = userText.toLowerCase().trim() === 'hola' || userText.toLowerCase().includes('que pasa');
+    
+    const [agentConfig, history] = await Promise.all([
+      getAgentConfig(ctx.crmUserId),
+      shouldIgnoreHistory ? Promise.resolve([]) : loadConversationHistory(ctx.telegramId, 10)
+    ]);
 
-    // 2. Construir tools con el contexto del usuario (RLS se aplica aquí)
+    const systemPrompt = agentConfig?.instructions 
+      ? `${DEFAULT_SYSTEM_PROMPT}\n\n### INSTRUCCIONES PERSONALIZADAS:\n${agentConfig.instructions}`
+      : DEFAULT_SYSTEM_PROMPT;
+    const model = agentConfig?.model || 'groq-llama-3-70b';
+    const temperature = agentConfig?.temperature ?? 0.7;
+
+    // 2. Construir tools con el contexto del usuario
     const tools = buildCrmTools(ctx);
 
-    // 3. Llamar al LLM con tool-calling automático
+    // 4. Llamar al LLM con tool-calling automático
     const result = await llmClient.chat({
-      system: SYSTEM_PROMPT,
+      system: systemPrompt,
       messages: [
         ...history,
         { role: 'user', content: userText },
       ],
       tools,
-      maxSteps: 5, // permite hasta 5 rondas de tool calls
+      maxSteps: 5,
+      temperature,
+      modelIdentifier: model,
     });
 
     // 4. Guardar en historial
