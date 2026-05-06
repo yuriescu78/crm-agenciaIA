@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { tool, zodSchema } from 'ai';
+import { tool } from 'ai';
 import { createSupabaseClientForUser } from '@/lib/supabase/client';
 import type { ToolContext } from '@/lib/llm/types';
 
@@ -15,7 +15,7 @@ export function buildCrmTools(ctx: ToolContext) {
   return {
     search_clients: tool({
       description: 'Busca clientes por nombre, email o empresa',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         query: z.string().describe('Texto a buscar'),
         limit: z.number().optional().default(5),
       })),
@@ -33,7 +33,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     list_clients: tool({
       description: 'Lista los clientes más recientes del CRM',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         limit: z.number().optional().default(10),
       })),
       execute: async ({ limit }) => {
@@ -50,7 +50,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     create_client: tool({
       description: 'Crea un nuevo cliente en el CRM',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         first_name: z.string().describe('Nombre del cliente'),
         last_name: z.string().optional().describe('Apellido del cliente'),
         company: z.string().optional().describe('Empresa del cliente'),
@@ -78,7 +78,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     create_task: tool({
       description: 'Crea una tarea asociada a un cliente o standalone',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         title: z.string().describe('Título de la tarea'),
         description: z.string().optional().describe('Descripción de la tarea'),
         priority: z.enum(['Alta', 'Media', 'Baja']).optional().default('Media').describe('Prioridad de la tarea'),
@@ -107,7 +107,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     list_tasks: tool({
       description: 'Lista las tareas pendientes, opcionalmente filtradas por hoy o urgentes',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         today: z.boolean().optional().default(false).describe('Solo tareas de hoy'),
         urgent: z.boolean().optional().default(false).describe('Solo tareas urgentes (prioridad Alta)'),
         limit: z.number().optional().default(10),
@@ -143,7 +143,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     complete_task: tool({
       description: 'Marca una tarea como completada',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         taskId: z.string().uuid().describe('ID de la tarea a completar'),
       })),
       execute: async ({ taskId }) => {
@@ -161,7 +161,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     get_agenda: tool({
       description: 'Devuelve los eventos del calendario para una fecha',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         date: z.string().describe('Fecha en formato YYYY-MM-DD'),
       })),
       execute: async ({ date }) => {
@@ -179,7 +179,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     create_event: tool({
       description: 'Crea un evento en el calendario',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         title: z.string().describe('Título del evento'),
         description: z.string().optional().describe('Descripción del evento'),
         type: z.string().optional().default('Reunión').describe('Tipo de evento'),
@@ -224,7 +224,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     list_opportunities: tool({
       description: 'Lista las oportunidades del pipeline comercial',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         limit: z.number().optional().default(10),
       })),
       execute: async ({ limit }) => {
@@ -241,7 +241,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     create_opportunity: tool({
       description: 'Crea una nueva oportunidad comercial en el pipeline',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         title: z.string().describe('Título de la oportunidad'),
         stage: z.string().optional().default('Contacto Inicial').describe('Etapa del pipeline'),
         clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
@@ -265,7 +265,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     update_opportunity_stage: tool({
       description: 'Actualiza la etapa de una oportunidad en el pipeline',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         opportunityId: z.string().uuid().describe('ID de la oportunidad'),
         stage: z.string().describe('Nueva etapa del pipeline'),
       })),
@@ -284,7 +284,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     get_daily_summary: tool({
       description: 'Obtiene un resumen general del día del usuario actual: clientes, tareas de hoy, eventos y urgencias',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         filter: z.string().optional().describe('Filtro opcional para el resumen')
       })),
       execute: async () => {
@@ -328,7 +328,7 @@ export function buildCrmTools(ctx: ToolContext) {
     // Tool destructiva: pide confirmación
     delete_client: tool({
       description: 'Elimina un cliente. SIEMPRE pide confirmación al usuario antes de ejecutar.',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         clientId: z.string().uuid().describe('ID del cliente a eliminar'),
         confirmed: z.boolean().describe('Solo true si el usuario ha confirmado explícitamente'),
       })),
@@ -359,7 +359,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     list_notifications: tool({
       description: 'Lista las notificaciones más recientes del usuario',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         unreadOnly: z.boolean().optional().default(true).describe('Si solo debe mostrar no leídas'),
         limit: z.number().optional().default(5),
       })),
@@ -382,7 +382,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     mark_notifications_as_read: tool({
       description: 'Marca las notificaciones del usuario como leídas',
-      parameters: zodSchema(z.object({
+      parameters: z.object({
         all: z.boolean().optional().default(true).describe('Si se deben marcar todas como leídas'),
         notificationIds: z.array(z.string().uuid()).optional().describe('Lista de IDs específicos a marcar'),
       })),
