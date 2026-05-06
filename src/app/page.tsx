@@ -28,6 +28,7 @@ export default function DashboardPage() {
   const [urgente, setUrgente] = useState<any[]>([]);
 
   useEffect(() => {
+    const fetchDashboardData = async () => {
       try {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
@@ -104,6 +105,7 @@ export default function DashboardPage() {
       } finally {
         setLoading(false);
       }
+    };
 
     fetchDashboardData();
   }, []);
