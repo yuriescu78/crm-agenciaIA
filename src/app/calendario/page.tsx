@@ -78,6 +78,7 @@ export default function CalendarioPage() {
 
   const getEventsForDate = (date: Date) => {
     return events.filter(e => {
+      if (!e.startAt) return false;
       const eventDate = new Date(e.startAt);
       return eventDate.getDate() === date.getDate() && 
              eventDate.getMonth() === date.getMonth() && 
@@ -229,9 +230,9 @@ export default function CalendarioPage() {
                     >
                       <p className="text-[10px] font-bold text-foreground truncate">{event.title}</p>
                       {event.startAt && event.startAt.includes('T') && (
-                        <p className="text-[9px] font-medium text-muted-foreground">
-                          {new Date(event.startAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-                        </p>
+                        <span className="text-[11px] font-bold text-neutral-400">
+                          {event.startAt ? new Date(event.startAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '--:--'}
+                        </span>
                       )}
                     </div>
                   ))}
