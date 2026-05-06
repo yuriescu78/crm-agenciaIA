@@ -88,7 +88,8 @@ export function NewOpportunityDialog({
         estimated_value: '',
         probability: '50',
         stage: 'Nuevo lead',
-        description: ''
+        description: '',
+        owner_id: ''
       });
       if (onOpportunityCreated) onOpportunityCreated();
     } catch (err: any) {
