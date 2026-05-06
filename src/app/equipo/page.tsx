@@ -276,8 +276,8 @@ export default function EquipoPage() {
       {/* Main Content: Table (Desktop/Mobile unified for now based on clients style) */}
       <div className="bg-card border border-border shadow-sm rounded-md overflow-hidden">
         <div className="px-6 py-5 border-b border-border flex justify-between items-center">
-          <h2 className="text-lg font-bold text-foreground">Pro Tables</h2>
-          <span className="text-xs text-muted-foreground">Dashboard / Pro Tables</span>
+          <h2 className="text-lg font-bold text-foreground">Gestión de Equipo</h2>
+          <span className="text-xs text-muted-foreground">Administración / Equipo</span>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
