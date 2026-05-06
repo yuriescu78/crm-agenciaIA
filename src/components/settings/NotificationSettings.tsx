@@ -63,10 +63,11 @@ export function NotificationSettings() {
         supabase.from('telegram_users').select('id').eq('user_id', user.id).maybeSingle()
       ]);
 
-      if (profileRes.data?.notification_preferences) {
+      const profileData = profileRes.data;
+      if (profileData?.notification_preferences) {
         setSettings(prev => ({ 
           ...prev, 
-          ...profileRes.data.notification_preferences 
+          ...(profileData.notification_preferences as any)
         }));
       }
 
