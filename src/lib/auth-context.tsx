@@ -39,8 +39,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     let mounted = true;
 
     const initAuth = async () => {
+      const startTime = Date.now();
+      console.log('AUTH: Iniciando verificación de sesión...');
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
+        const duration = Date.now() - startTime;
+        console.log(`AUTH: Sesión verificada en ${duration}ms.`, session ? "Usuario detectado." : "No hay sesión.");
+        
         if (error) throw error;
         
         if (mounted) {
@@ -48,7 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           await fetchProfile(session?.user ?? null);
         }
       } catch (err) {
-        console.error('Error inicializando sesión:', err);
+        console.error('AUTH: Error inicializando sesión:', err);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -56,13 +61,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initAuth();
 
-    // Set a safety timeout just in case Supabase hangs (3 seconds max)
+    // Aumentamos el margen a 12 segundos para dar tiempo en conexiones lentas
     const safetyTimeout = setTimeout(() => {
       if (mounted && loading) {
         setLoading(false);
-        console.warn('Auth init timeout reached, forcing load completion');
+        console.warn('AUTH: Tiempo de espera agotado (12s). Forzando carga con estado actual.');
       }
-    }, 3000);
+    }, 12000);
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {

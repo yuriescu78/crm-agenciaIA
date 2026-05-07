@@ -124,13 +124,13 @@ export default function DashboardPage() {
 
     fetchDashboardData();
 
-    // Safety timeout: si en 6 segundos no ha cargado, forzamos el fin del loading
+    // Safety timeout: si en 12 segundos no ha cargado, forzamos el fin del loading
     const timer = setTimeout(() => {
       if (mounted && loading) {
-        console.warn("DASHBOARD: Tiempo de espera agotado. Forzando visualización.");
+        console.warn("DASHBOARD: Tiempo de espera agotado (12s). Forzando visualización.");
         setLoading(false);
       }
-    }, 6000);
+    }, 12000);
 
     return () => {
       mounted = false;
