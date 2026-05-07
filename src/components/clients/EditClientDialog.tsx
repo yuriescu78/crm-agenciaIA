@@ -86,14 +86,20 @@ export function EditClientDialog({
     setLoading(true);
     
     try {
-      // 1. Update client
-      const { error: clientError } = await supabase
+      // 1. Update client con protección de timeout
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('La base de datos no responde. Comprueba si el proyecto de Supabase está activo.')), 7000)
+      );
+
+      const updatePromise = supabase
         .from('clients')
         .update({
           ...formData,
           owner_id: formData.owner_id || null
         })
         .eq('id', client.id);
+
+      const { error: clientError }: any = await Promise.race([updatePromise, timeoutPromise]);
 
       if (clientError) {
         if (clientError.code === '23505') { // Unique constraint violation
