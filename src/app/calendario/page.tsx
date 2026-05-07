@@ -134,6 +134,7 @@ export default function CalendarioPage() {
         defaultDate={selectedDate}
         event={selectedEvent}
         onEventCreated={fetchEvents}
+        existingEvents={events}
       />
 
       {selectedEvent && (

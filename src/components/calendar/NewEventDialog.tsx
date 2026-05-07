@@ -25,9 +25,10 @@ interface NewEventDialogProps {
   event?: any;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  existingEvents?: any[];
 }
 
-export function NewEventDialog({ children, onEventCreated, defaultDate, event, open: externalOpen, onOpenChange: setExternalOpen }: NewEventDialogProps) {
+export function NewEventDialog({ children, onEventCreated, defaultDate, event, open: externalOpen, onOpenChange: setExternalOpen, existingEvents = [] }: NewEventDialogProps) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = (val: boolean) => {
@@ -103,11 +104,25 @@ export function NewEventDialog({ children, onEventCreated, defaultDate, event, o
         return;
       }
 
-      // Check for overlapping events at the exact same start time
-      const { data: overlapping } = await supabase
+      // Check for overlapping events at the exact same start time (local check against passed events)
+      const hasOverlapLocal = existingEvents.some(e => {
+        if (e.id === event?.id) return false;
+        if (!e.startAt) return false;
+        // Comparar tiempos ignorando milisegundos y formatos de string
+        return new Date(e.startAt).getTime() === new Date(startAt).getTime();
+      });
+
+      if (hasOverlapLocal) {
+        toast.error(`Conflicto: Ya existe un evento programado a esta misma hora en tu calendario.`);
+        setLoading(false);
+        return;
+      }
+
+      // Check for overlapping events in Database (more robust query)
+      const { data: overlapping, error: checkError } = await supabase
         .from('calendar_events')
         .select('id, title')
-        .eq('start_at', startAt)
+        .filter('start_at', 'eq', startAt)
         .neq('id', event?.localId || '');
 
       if (overlapping && overlapping.length > 0) {

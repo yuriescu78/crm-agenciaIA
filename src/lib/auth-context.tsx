@@ -46,7 +46,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         // Usamos una promesa con timeout para cada intento individual
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('TIMEOUT_INDIVIDUAL')), 5000)
+          setTimeout(() => reject(new Error('TIMEOUT_INDIVIDUAL')), 10000)
         );
 
         const { data, error }: any = await Promise.race([sessionPromise, timeoutPromise]);
@@ -62,7 +62,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setLoading(false);
         }
       } catch (err: any) {
-        console.error(`AUTH: Fallo en intento ${retryCount + 1}:`, err.message);
+        // Usamos warn en lugar de error para los reintentos para evitar el overlay de error en desarrollo
+        console.warn(`AUTH: Intento ${retryCount + 1} fallido (${err.message}). Reintentando...`);
         
         if (retryCount < 2 && mounted) {
           const delay = (retryCount + 1) * 2000;
