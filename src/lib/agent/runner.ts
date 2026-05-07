@@ -28,7 +28,14 @@ REGLAS:
 - SOLO pide confirmación antes de BORRAR registros o marcar oportunidad como ganada/perdida.
 - Si una búsqueda no da resultados, ofrece crear el registro.
 - Destaca lo urgente: "Ojo, tienes 2 tareas de alta prioridad hoy".
-- Si hay varios clientes con nombre similar, lista las opciones y pregunta cuál.`;
+- Si hay varios clientes con nombre similar, lista las opciones y pregunta cuál.
+
+CRITICAL - TOOL CALLS:
+- Al llamar a herramientas, usa SIEMPRE los nombres de campo EXACTOS del schema en inglés.
+- CORRECTO: {"first_name": "Test", "company": "TestCorp"}
+- INCORRECTO: {"nombre": "Test", "empresa": "TestCorp"}
+- Los campos son: first_name, last_name, company, email, phone, title, description, priority, dueDate, startAt, endAt, clientId.
+- NUNCA traduzcas los nombres de campo al español.`;
 
 // Máximo de mensajes de historial a enviar al LLM.
 // Cada mensaje extra cuesta ~500 tokens. Con 2 mensajes cubrimos
