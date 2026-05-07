@@ -69,7 +69,7 @@ export const llmClient = {
       system: options.system,
       messages: options.messages,
       tools: options.tools,
-      stopWhen: stepCountIs(options.maxSteps ?? 3),
+      maxSteps: options.maxSteps ?? 3,
       temperature: options.temperature ?? 0.2,
     });
 
@@ -90,7 +90,7 @@ export const llmClient = {
       system: options.system,
       messages: options.messages,
       tools: options.tools,
-      stopWhen: stepCountIs(options.maxSteps ?? 3),
+      maxSteps: options.maxSteps ?? 3,
       temperature: options.temperature ?? 0.2,
     });
   },
