@@ -71,12 +71,12 @@ export function EditClientDialog({
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
-    if (open) {
-      supabase.from('users').select('id, name').then(({ data }) => {
-        if (data) setUsers(data);
-      });
-    }
-  }, [open]);
+    const fetchUsers = async () => {
+      const { data } = await supabase.from('users').select('id, name');
+      if (data) setUsers(data);
+    };
+    fetchUsers();
+  }, []);
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
@@ -215,8 +215,8 @@ export function EditClientDialog({
             <div className="space-y-2">
               <label className="text-[11px] font-black text-muted-foreground uppercase tracking-widest ml-1">Socio Asignado</label>
               <Select 
-                value={formData.owner_id} 
-                onValueChange={(val: string | null) => { const v = val ?? ''; setFormData(prev => ({ ...prev, owner_id: v === 'none' ? '' : v })); }}
+                value={formData.owner_id || 'none'} 
+                onValueChange={(val: string) => setFormData(prev => ({ ...prev, owner_id: val === 'none' ? '' : val }))}
               >
                 <SelectTrigger className="h-12 rounded-xl border-border bg-background focus:ring-1 focus:ring-primary font-bold text-[14px]">
                   <SelectValue placeholder="Selecciona un socio" />
