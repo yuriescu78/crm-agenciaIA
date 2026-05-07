@@ -297,17 +297,19 @@ function normalizeDateTime(input: string): string {
 
   // Si ya tiene hora (contiene T o tiene longitud > 10)
   if (input.includes('T') || input.length > 10) {
-    // Intentar preservar la hora original
     const timeMatch = input.match(/(\d{1,2}):(\d{2})/);
     if (timeMatch) {
       const [, hours, minutes] = timeMatch;
-      return `${dateOnly}T${hours.padStart(2, '0')}:${minutes}:00`;
+      // Siempre incluir timezone de España para que Postgres lo acepte
+      return `${dateOnly}T${hours.padStart(2, '0')}:${minutes}:00+02:00`;
     }
-    return input; // Ya parece ISO completo
+    // Si ya tiene timezone (+XX:XX o Z), devolver como está
+    if (input.includes('+') || input.endsWith('Z')) return input;
+    return `${input}+02:00`;
   }
 
-  // Solo fecha → añadir hora por defecto (09:00 para inicio, dejamos que el caller decida)
-  return `${dateOnly}T09:00:00`;
+  // Solo fecha → añadir hora por defecto con timezone
+  return `${dateOnly}T09:00:00+02:00`;
 }
 
 /**
