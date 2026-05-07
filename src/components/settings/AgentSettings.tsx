@@ -153,11 +153,19 @@ export function AgentSettings() {
 
   const handleSaveAgent = async () => {
     setSaving(true);
+    console.log("AGENT_SETTINGS: Intentando guardar configuración...");
+    
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('No autenticado');
 
-      const { error } = await supabase
+      // Creamos una promesa que falla a los 7 segundos
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Tiempo de espera agotado al conectar con la base de datos')), 7000)
+      );
+
+      // Ejecutamos la actualización con el timeout
+      const updatePromise = supabase
         .from('users')
         .update({ 
           agent_config: agentConfig,
@@ -165,12 +173,19 @@ export function AgentSettings() {
         })
         .eq('id', session.user.id);
 
-      if (error) throw error;
+      const result: any = await Promise.race([updatePromise, timeoutPromise]);
+      
+      if (result.error) throw result.error;
+
+      console.log("AGENT_SETTINGS: Guardado exitoso.");
       toast.success('Configuración guardada', {
         description: 'El cerebro del agente ha sido actualizado.'
       });
     } catch (error: any) {
-      toast.error('Error al guardar', { description: error.message });
+      console.error('AGENT_SETTINGS: Error al guardar:', error);
+      toast.error('Error al guardar', { 
+        description: error.message || 'No se pudo conectar con la base de datos.' 
+      });
     } finally {
       setSaving(false);
     }
