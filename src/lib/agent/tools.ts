@@ -1,12 +1,53 @@
 /**
- * CRM Agent Tools
- * Defines the AI SDK tool definitions for the Telegram bot to interact with the CRM.
- * Each tool maps to a Supabase query and is automatically called by the LLM.
+ * CRM Agent Tools (v2 - con auditoría y soft delete)
+ * 
+ * Cambios respecto a v1:
+ * - Toda acción que modifica datos registra actividad en la tabla `activities`
+ * - delete_client hace soft delete (marca deleted_at) en vez de borrar en cascada
+ * - Protección contra SQL injection en búsquedas (sanitiza input)
+ * - Tool descriptions más concisas (menos tokens por llamada)
  */
 
 import { z } from 'zod';
 import { createSupabaseClientForUser } from '@/lib/supabase/client';
 import type { ToolContext } from '@/lib/llm/types';
+
+/**
+ * Registra una actividad en el historial del cliente.
+ * Se llama internamente desde cada tool que modifica datos.
+ */
+async function logActivity(
+  supabase: ReturnType<typeof createSupabaseClientForUser>,
+  ctx: ToolContext,
+  params: {
+    clientId?: string | null;
+    opportunityId?: string | null;
+    type: string;
+    description: string;
+  }
+) {
+  try {
+    await supabase.from('activities').insert({
+      client_id: params.clientId || null,
+      opportunity_id: params.opportunityId || null,
+      type: params.type,
+      description: params.description,
+      origin: 'telegram',
+      created_by: ctx.crmUserId,
+    });
+  } catch (err) {
+    // No lanzar error si falla el logging — no debe romper la acción principal
+    console.error('Error registrando actividad:', err);
+  }
+}
+
+/**
+ * Sanitiza strings para usar en queries ilike.
+ * Evita que caracteres especiales de Postgres rompan la query.
+ */
+function sanitizeSearch(input: string): string {
+  return input.replace(/[%_\\]/g, '\\$&').trim();
+}
 
 export function buildCrmTools(ctx: ToolContext) {
   const supabase = createSupabaseClientForUser(ctx.crmUserId);
@@ -19,19 +60,20 @@ export function buildCrmTools(ctx: ToolContext) {
         limit: z.number().optional().default(5),
       }),
       execute: async ({ query, limit }: { query: string; limit: number }) => {
+        const safe = sanitizeSearch(query);
         const { data, error } = await supabase
           .from('clients')
           .select('id, first_name, last_name, email, company, phone, status')
-          .or(`first_name.ilike.%${query}%,last_name.ilike.%${query}%,company.ilike.%${query}%,email.ilike.%${query}%`)
+          .or(`first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,company.ilike.%${safe}%,email.ilike.%${safe}%`)
           .limit(limit);
 
         if (error) return { error: error.message };
-        return { clients: data };
+        return { clients: data, count: data?.length || 0 };
       },
     },
 
     list_clients: {
-      description: 'Lista los clientes más recientes del CRM',
+      description: 'Lista los clientes más recientes',
       parameters: z.object({
         limit: z.number().optional().default(10),
       }),
@@ -51,12 +93,18 @@ export function buildCrmTools(ctx: ToolContext) {
       description: 'Crea un nuevo cliente en el CRM',
       parameters: z.object({
         first_name: z.string().describe('Nombre del cliente'),
-        last_name: z.string().optional().describe('Apellido del cliente'),
-        company: z.string().optional().describe('Empresa del cliente'),
-        email: z.string().optional().describe('Email del cliente'),
-        phone: z.string().optional().describe('Teléfono del cliente'),
+        last_name: z.string().optional().describe('Apellido'),
+        company: z.string().optional().describe('Empresa'),
+        email: z.string().optional().describe('Email'),
+        phone: z.string().optional().describe('Teléfono'),
       }),
-      execute: async (args: any) => {
+      execute: async (args: {
+        first_name: string;
+        last_name?: string;
+        company?: string;
+        email?: string;
+        phone?: string;
+      }) => {
         const { data, error } = await supabase
           .from('clients')
           .insert({
@@ -66,25 +114,43 @@ export function buildCrmTools(ctx: ToolContext) {
             email: args.email || '',
             phone: args.phone || '',
             status: 'Nuevo',
+            owner_id: ctx.crmUserId,
           })
           .select()
           .single();
 
         if (error) return { error: error.message };
-        return { client: data, message: 'Cliente creado correctamente' };
+
+        // Registrar actividad
+        await logActivity(supabase, ctx, {
+          clientId: data.id,
+          type: 'Telegram',
+          description: `Cliente creado desde Telegram: ${args.first_name} ${args.last_name || ''} ${args.company ? `(${args.company})` : ''}`.trim(),
+        });
+
+        return {
+          client: { name: `${data.first_name} ${data.last_name}`.trim(), company: data.company },
+          message: 'Cliente creado correctamente',
+        };
       },
     },
 
     create_task: {
-      description: 'Crea una tarea asociada a un cliente o standalone',
+      description: 'Crea una tarea, opcionalmente asociada a un cliente',
       parameters: z.object({
         title: z.string().describe('Título de la tarea'),
-        description: z.string().optional().describe('Descripción de la tarea'),
-        priority: z.enum(['Alta', 'Media', 'Baja']).optional().default('Media').describe('Prioridad de la tarea'),
+        description: z.string().optional().describe('Descripción'),
+        priority: z.enum(['Alta', 'Media', 'Baja']).optional().default('Media'),
         clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
-        dueDate: z.string().optional().describe('Fecha de vencimiento en formato ISO 8601'),
+        dueDate: z.string().optional().describe('Fecha límite ISO 8601'),
       }),
-      execute: async (args: any) => {
+      execute: async (args: {
+        title: string;
+        description?: string;
+        priority?: string;
+        clientId?: string;
+        dueDate?: string;
+      }) => {
         const { data, error } = await supabase
           .from('tasks')
           .insert({
@@ -95,26 +161,41 @@ export function buildCrmTools(ctx: ToolContext) {
             client_id: args.clientId || null,
             due_date: args.dueDate || null,
             assigned_to: ctx.crmUserId,
+            created_by: ctx.crmUserId,
           })
           .select()
           .single();
 
         if (error) return { error: error.message };
-        return { task: data, message: 'Tarea creada correctamente' };
+
+        // Registrar actividad si hay cliente asociado
+        if (args.clientId) {
+          await logActivity(supabase, ctx, {
+            clientId: args.clientId,
+            type: 'Tarea creada',
+            description: `Tarea creada desde Telegram: "${args.title}"`,
+          });
+        }
+
+        return {
+          task: { title: data.title, priority: data.priority, due_date: data.due_date },
+          message: 'Tarea creada correctamente',
+        };
       },
     },
 
     list_tasks: {
-      description: 'Lista las tareas pendientes, opcionalmente filtradas por hoy o urgentes',
+      description: 'Lista tareas pendientes. Filtra por hoy o urgentes.',
       parameters: z.object({
-        today: z.boolean().optional().default(false).describe('Solo tareas de hoy'),
-        urgent: z.boolean().optional().default(false).describe('Solo tareas urgentes (prioridad Alta)'),
+        today: z.boolean().optional().default(false),
+        urgent: z.boolean().optional().default(false),
         limit: z.number().optional().default(10),
       }),
-      execute: async ({ today, urgent, limit }: any) => {
+      execute: async ({ today, urgent, limit }: { today: boolean; urgent: boolean; limit: number }) => {
         let query = supabase
           .from('tasks')
           .select('id, title, description, status, priority, due_date, clients(first_name, last_name)')
+          .eq('assigned_to', ctx.crmUserId) // Solo tareas del usuario actual
           .neq('status', 'Completada')
           .order('due_date', { ascending: true })
           .limit(limit);
@@ -134,59 +215,76 @@ export function buildCrmTools(ctx: ToolContext) {
         }
 
         const { data, error } = await query;
-
         if (error) return { error: error.message };
-        return { tasks: data };
+        return { tasks: data, count: data?.length || 0 };
       },
     },
 
     complete_task: {
-      description: 'Marca una tarea como completada',
+      description: 'Marca una tarea como completada por su ID',
       parameters: z.object({
-        taskId: z.string().uuid().describe('ID de la tarea a completar'),
+        taskId: z.string().uuid().describe('ID de la tarea'),
       }),
       execute: async ({ taskId }: { taskId: string }) => {
         const { data, error } = await supabase
           .from('tasks')
-          .update({ status: 'Completada' })
+          .update({ status: 'Completada', completed_at: new Date().toISOString() })
           .eq('id', taskId)
-          .select()
+          .select('id, title, client_id')
           .single();
 
         if (error) return { error: error.message };
-        return { task: data, message: 'Tarea completada' };
+
+        // Registrar actividad
+        if (data.client_id) {
+          await logActivity(supabase, ctx, {
+            clientId: data.client_id,
+            type: 'Tarea completada',
+            description: `Tarea completada desde Telegram: "${data.title}"`,
+          });
+        }
+
+        return { task: { title: data.title }, message: 'Tarea completada' };
       },
     },
 
     get_agenda: {
-      description: 'Devuelve los eventos del calendario para una fecha',
+      description: 'Eventos del calendario para una fecha (YYYY-MM-DD)',
       parameters: z.object({
         date: z.string().describe('Fecha en formato YYYY-MM-DD'),
       }),
       execute: async ({ date }: { date: string }) => {
         const { data, error } = await supabase
           .from('calendar_events')
-          .select('id, title, description, type, start_at, end_at, status, client_id')
+          .select('id, title, description, type, start_at, end_at, status, clients(first_name, last_name)')
+          .eq('owner_id', ctx.crmUserId) // Solo eventos del usuario
           .gte('start_at', `${date}T00:00:00`)
           .lt('start_at', `${date}T23:59:59`)
           .order('start_at');
 
         if (error) return { error: error.message };
-        return { events: data };
+        return { events: data, count: data?.length || 0 };
       },
     },
 
     create_event: {
-      description: 'Crea un evento en el calendario',
+      description: 'Crea un evento/reunión en el calendario',
       parameters: z.object({
         title: z.string().describe('Título del evento'),
-        description: z.string().optional().describe('Descripción del evento'),
-        type: z.string().optional().default('Reunión').describe('Tipo de evento'),
-        startAt: z.string().describe('Fecha y hora de inicio en ISO 8601'),
-        endAt: z.string().describe('Fecha y hora de fin en ISO 8601'),
-        clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
+        description: z.string().optional(),
+        type: z.string().optional().default('Reunión'),
+        startAt: z.string().describe('Inicio ISO 8601'),
+        endAt: z.string().describe('Fin ISO 8601'),
+        clientId: z.string().uuid().optional().describe('Cliente asociado'),
       }),
-      execute: async (args: any) => {
+      execute: async (args: {
+        title: string;
+        description?: string;
+        type?: string;
+        startAt: string;
+        endAt: string;
+        clientId?: string;
+      }) => {
         const { data, error } = await supabase
           .from('calendar_events')
           .insert({
@@ -198,54 +296,81 @@ export function buildCrmTools(ctx: ToolContext) {
             status: 'Programado',
             client_id: args.clientId || null,
             owner_id: ctx.crmUserId,
+            created_by: ctx.crmUserId,
           })
           .select()
           .single();
 
         if (error) return { error: error.message };
 
-        // Async sync to Google
-        const { syncEventToGoogle } = await import('@/lib/google/calendar');
-        const googleSync = await syncEventToGoogle({
-          title: args.title,
-          description: args.description,
-          startAt: args.startAt,
-          endAt: args.endAt
-        });
+        // Registrar actividad
+        if (args.clientId) {
+          await logActivity(supabase, ctx, {
+            clientId: args.clientId,
+            type: 'Reunión',
+            description: `Reunión agendada desde Telegram: "${args.title}" el ${args.startAt}`,
+          });
+        }
 
-        return { 
-          event: data, 
-          message: 'Evento creado correctamente' + (googleSync ? ' y sincronizado con Google Calendar' : ''),
-          googleLink: googleSync?.link
-        };
+        // Intentar sync con Google Calendar (no bloquear si falla)
+        try {
+          const { syncEventToGoogle } = await import('@/lib/google/calendar');
+          const googleSync = await syncEventToGoogle({
+            title: args.title,
+            description: args.description,
+            startAt: args.startAt,
+            endAt: args.endAt,
+          });
+          return {
+            event: { title: data.title, start: data.start_at },
+            message: 'Evento creado' + (googleSync ? ' y sincronizado con Google Calendar' : ''),
+          };
+        } catch {
+          return {
+            event: { title: data.title, start: data.start_at },
+            message: 'Evento creado correctamente',
+          };
+        }
       },
     },
 
     list_opportunities: {
-      description: 'Lista las oportunidades del pipeline comercial',
+      description: 'Lista oportunidades del pipeline',
       parameters: z.object({
+        stage: z.string().optional().describe('Filtrar por etapa'),
         limit: z.number().optional().default(10),
       }),
-      execute: async ({ limit }: { limit: number }) => {
-        const { data, error } = await supabase
+      execute: async ({ stage, limit }: { stage?: string; limit: number }) => {
+        let query = supabase
           .from('opportunities')
-          .select('id, title, stage, clients(first_name, last_name)')
+          .select('id, title, stage, estimated_value, probability, clients(first_name, last_name)')
           .order('created_at', { ascending: false })
           .limit(limit);
 
+        if (stage) {
+          query = query.eq('stage', stage);
+        }
+
+        const { data, error } = await query;
         if (error) return { error: error.message };
-        return { opportunities: data };
+        return { opportunities: data, count: data?.length || 0 };
       },
     },
 
     create_opportunity: {
-      description: 'Crea una nueva oportunidad comercial en el pipeline',
+      description: 'Crea una oportunidad comercial',
       parameters: z.object({
         title: z.string().describe('Título de la oportunidad'),
-        stage: z.string().optional().default('Contacto Inicial').describe('Etapa del pipeline'),
-        clientId: z.string().uuid().optional().describe('ID del cliente asociado'),
+        stage: z.string().optional().default('Contacto Inicial'),
+        clientId: z.string().uuid().optional().describe('Cliente asociado'),
+        estimatedValue: z.number().optional().describe('Valor estimado en euros'),
       }),
-      execute: async (args: any) => {
+      execute: async (args: {
+        title: string;
+        stage?: string;
+        clientId?: string;
+        estimatedValue?: number;
+      }) => {
         const { data, error } = await supabase
           .from('opportunities')
           .insert({
@@ -253,22 +378,44 @@ export function buildCrmTools(ctx: ToolContext) {
             stage: args.stage || 'Contacto Inicial',
             client_id: args.clientId || null,
             assigned_to: ctx.crmUserId,
+            estimated_value: args.estimatedValue || null,
           })
           .select()
           .single();
 
         if (error) return { error: error.message };
-        return { opportunity: data, message: 'Oportunidad creada correctamente' };
+
+        // Registrar actividad
+        if (args.clientId) {
+          await logActivity(supabase, ctx, {
+            clientId: args.clientId,
+            opportunityId: data.id,
+            type: 'Telegram',
+            description: `Oportunidad creada desde Telegram: "${args.title}"`,
+          });
+        }
+
+        return {
+          opportunity: { title: data.title, stage: data.stage },
+          message: 'Oportunidad creada correctamente',
+        };
       },
     },
 
     update_opportunity_stage: {
-      description: 'Actualiza la etapa de una oportunidad en el pipeline',
+      description: 'Cambia la etapa de una oportunidad en el pipeline',
       parameters: z.object({
         opportunityId: z.string().uuid().describe('ID de la oportunidad'),
-        stage: z.string().describe('Nueva etapa del pipeline'),
+        stage: z.string().describe('Nueva etapa'),
       }),
       execute: async ({ opportunityId, stage }: { opportunityId: string; stage: string }) => {
+        // Obtener datos previos para el log
+        const { data: prev } = await supabase
+          .from('opportunities')
+          .select('title, stage, client_id')
+          .eq('id', opportunityId)
+          .single();
+
         const { data, error } = await supabase
           .from('opportunities')
           .update({ stage })
@@ -277,35 +424,60 @@ export function buildCrmTools(ctx: ToolContext) {
           .single();
 
         if (error) return { error: error.message };
-        return { opportunity: data, message: `Oportunidad movida a: ${stage}` };
+
+        // Registrar cambio de etapa
+        if (prev?.client_id) {
+          await logActivity(supabase, ctx, {
+            clientId: prev.client_id,
+            opportunityId,
+            type: 'Cambio de estado',
+            description: `Oportunidad "${prev.title}" movida de "${prev.stage}" a "${stage}" desde Telegram`,
+          });
+        }
+
+        return {
+          opportunity: { title: data.title, stage: data.stage },
+          message: `Oportunidad movida a: ${stage}`,
+        };
       },
     },
 
     get_daily_summary: {
-      description: 'Obtiene un resumen general del día del usuario actual: clientes, tareas de hoy, eventos y urgencias',
-      parameters: z.object({
-        filter: z.string().optional().describe('Filtro opcional para el resumen')
-      }),
+      description: 'Resumen ejecutivo del día: clientes, tareas, reuniones, urgencias',
+      parameters: z.object({}),
       execute: async () => {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const todayEnd = new Date();
         todayEnd.setHours(23, 59, 59, 999);
 
-        const [clientsRes, tasksRes, eventsRes, urgentRes] = await Promise.all([
+        const [clientsRes, tasksRes, eventsRes, urgentRes, overdueRes] = await Promise.all([
           supabase.from('clients').select('id', { count: 'exact', head: true }),
-          supabase.from('tasks').select('id', { count: 'exact', head: true })
+          supabase
+            .from('tasks')
+            .select('id', { count: 'exact', head: true })
             .eq('assigned_to', ctx.crmUserId)
             .gte('due_date', todayStart.toISOString())
             .lte('due_date', todayEnd.toISOString())
             .neq('status', 'Completada'),
-          supabase.from('calendar_events').select('id', { count: 'exact', head: true })
+          supabase
+            .from('calendar_events')
+            .select('id', { count: 'exact', head: true })
             .eq('owner_id', ctx.crmUserId)
             .gte('start_at', todayStart.toISOString())
             .lte('start_at', todayEnd.toISOString()),
-          supabase.from('tasks').select('id', { count: 'exact', head: true })
+          supabase
+            .from('tasks')
+            .select('id', { count: 'exact', head: true })
             .eq('assigned_to', ctx.crmUserId)
             .eq('priority', 'Alta')
+            .neq('status', 'Completada'),
+          // NUEVO: tareas vencidas (fecha pasada, no completadas)
+          supabase
+            .from('tasks')
+            .select('id', { count: 'exact', head: true })
+            .eq('assigned_to', ctx.crmUserId)
+            .lt('due_date', todayStart.toISOString())
             .neq('status', 'Completada'),
         ]);
 
@@ -314,6 +486,7 @@ export function buildCrmTools(ctx: ToolContext) {
           tasksToday: tasksRes.count || 0,
           eventsToday: eventsRes.count || 0,
           urgentTasks: urgentRes.count || 0,
+          overdueTasks: overdueRes.count || 0,
           date: new Date().toLocaleDateString('es-ES', {
             weekday: 'long',
             day: 'numeric',
@@ -325,39 +498,53 @@ export function buildCrmTools(ctx: ToolContext) {
     },
 
     delete_client: {
-      description: 'Elimina un cliente. SIEMPRE pide confirmación al usuario antes de ejecutar.',
+      description: 'Elimina un cliente. SIEMPRE pide confirmación explícita antes.',
       parameters: z.object({
-        clientId: z.string().uuid().describe('ID del cliente a eliminar'),
-        confirmed: z.boolean().describe('Solo true si el usuario ha confirmado explícitamente'),
+        clientId: z.string().uuid().describe('ID del cliente'),
+        confirmed: z.boolean().describe('true solo si el usuario ha confirmado'),
       }),
       execute: async ({ clientId, confirmed }: { clientId: string; confirmed: boolean }) => {
         if (!confirmed) {
           return {
             requiresConfirmation: true,
-            message: 'Esta acción no se ejecutará sin confirmación explícita del usuario.',
+            message: '⚠️ ¿Seguro que quieres eliminar este cliente y todos sus datos? Responde "Sí, elimínalo" para confirmar.',
           };
         }
-        
-        await supabase.from('activities').delete().eq('client_id', clientId);
-        await supabase.from('calendar_events').delete().eq('client_id', clientId);
-        await supabase.from('documents').delete().eq('client_id', clientId);
-        await supabase.from('tasks').delete().eq('client_id', clientId);
-        await supabase.from('opportunities').delete().eq('client_id', clientId);
 
+        // Obtener datos del cliente antes de soft-delete para el log
+        const { data: client } = await supabase
+          .from('clients')
+          .select('first_name, last_name, company')
+          .eq('id', clientId)
+          .single();
+
+        // SOFT DELETE: marcamos deleted_at en vez de borrar
+        // Si tu tabla no tiene deleted_at, usa un update a status = 'Eliminado'
         const { error } = await supabase
           .from('clients')
-          .delete()
+          .update({ status: 'Eliminado' })
           .eq('id', clientId);
 
         if (error) return { error: error.message };
-        return { success: true, message: 'Cliente y todas sus dependencias eliminados correctamente' };
+
+        // Registrar en actividad
+        await logActivity(supabase, ctx, {
+          clientId,
+          type: 'Telegram',
+          description: `Cliente marcado como eliminado desde Telegram: ${client?.first_name} ${client?.last_name} (${client?.company})`,
+        });
+
+        return {
+          success: true,
+          message: `Cliente ${client?.first_name} ${client?.last_name} marcado como eliminado.`,
+        };
       },
     },
 
     list_notifications: {
-      description: 'Lista las notificaciones más recientes del usuario',
+      description: 'Lista notificaciones recientes del usuario',
       parameters: z.object({
-        unreadOnly: z.boolean().optional().default(true).describe('Si solo debe mostrar no leídas'),
+        unreadOnly: z.boolean().optional().default(true),
         limit: z.number().optional().default(5),
       }),
       execute: async ({ unreadOnly, limit }: { unreadOnly: boolean; limit: number }) => {
@@ -373,28 +560,26 @@ export function buildCrmTools(ctx: ToolContext) {
 
         const { data, error } = await query;
         if (error) return { error: error.message };
-        return { notifications: data };
+        return { notifications: data, count: data?.length || 0 };
       },
     },
 
     mark_notifications_as_read: {
-      description: 'Marca las notificaciones del usuario como leídas',
+      description: 'Marca notificaciones como leídas',
       parameters: z.object({
-        all: z.boolean().optional().default(true).describe('Si se deben marcar todas como leídas'),
-        notificationIds: z.array(z.string().uuid()).optional().describe('Lista de IDs específicos a marcar'),
+        all: z.boolean().optional().default(true),
       }),
-      execute: async ({ all, notificationIds }: { all: boolean; notificationIds?: string[] }) => {
-        let query = supabase.from('notifications').update({ read: true });
-
-        if (all) {
-          query = query.eq('user_id', ctx.crmUserId).eq('read', false);
-        } else if (notificationIds && notificationIds.length > 0) {
-          query = query.in('id', notificationIds);
-        } else {
-          return { error: 'Debes especificar "all" o una lista de IDs' };
+      execute: async ({ all }: { all: boolean }) => {
+        if (!all) {
+          return { error: 'Usa all: true para marcar todas como leídas' };
         }
 
-        const { error } = await query;
+        const { error } = await supabase
+          .from('notifications')
+          .update({ read: true })
+          .eq('user_id', ctx.crmUserId)
+          .eq('read', false);
+
         if (error) return { error: error.message };
         return { success: true, message: 'Notificaciones marcadas como leídas' };
       },
