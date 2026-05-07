@@ -28,34 +28,42 @@ export default function DashboardPage() {
   const [urgente, setUrgente] = useState<any[]>([]);
 
   useEffect(() => {
+    let mounted = true;
+
     const fetchDashboardData = async () => {
+      console.log("DASHBOARD: Iniciando carga de datos...");
       try {
         const todayStart = new Date();
         todayStart.setHours(0, 0, 0, 0);
         const todayEnd = new Date();
         todayEnd.setHours(23, 59, 59, 999);
 
-        // 1. Actividad Reciente (Notas de clientes)
-        const { data: notasData } = await supabase
+        // 1. Actividad Reciente
+        console.log("DASHBOARD: Cargando actividad reciente...");
+        const { data: notasData, error: err1 } = await supabase
           .from('client_notes')
           .select('*, clients(first_name, last_name)')
           .order('created_at', { ascending: false })
           .limit(5);
+        if (err1) console.error("DASHBOARD: Error en notas:", err1);
           
-        // 2. Próximas fechas calendario (Local + Google)
+        // 2. Próximas fechas calendario
+        console.log("DASHBOARD: Cargando fechas de calendario local...");
         const startOfToday = new Date();
         startOfToday.setHours(0, 0, 0, 0);
 
-        const { data: localCalendarData } = await supabase
+        const { data: localCalendarData, error: err2 } = await supabase
           .from('calendar_events')
           .select('*')
           .gte('start_at', startOfToday.toISOString())
           .order('start_at', { ascending: true })
           .limit(5);
+        if (err2) console.error("DASHBOARD: Error en calendario local:", err2);
 
         let allEvents = localCalendarData || [];
 
         try {
+          console.log("DASHBOARD: Cargando eventos de Google...");
           const googleEvents = await fetchGoogleEventsAction(
             startOfToday.toISOString(),
             addDays(new Date(), 90).toISOString()
@@ -74,11 +82,12 @@ export default function DashboardPage() {
             .sort((a, b) => new Date(a.start_at).getTime() - new Date(b.start_at).getTime())
             .slice(0, 10);
         } catch (error) {
-          console.error("Error fetching google events", error);
+          console.error("DASHBOARD: Error fetching google events", error);
         }
 
         // 3. Tareas de hoy
-        const { data: todayTasksData } = await supabase
+        console.log("DASHBOARD: Cargando tareas de hoy...");
+        const { data: todayTasksData, error: err3 } = await supabase
           .from('tasks')
           .select('*, clients(first_name, last_name)')
           .gte('due_date', todayStart.toISOString())
@@ -86,28 +95,47 @@ export default function DashboardPage() {
           .neq('status', 'Completada')
           .order('due_date', { ascending: true })
           .limit(5);
+        if (err3) console.error("DASHBOARD: Error en tareas hoy:", err3);
 
         // 4. Lo más urgente
-        const { data: urgentTasksData } = await supabase
+        console.log("DASHBOARD: Cargando tareas urgentes...");
+        const { data: urgentTasksData, error: err4 } = await supabase
           .from('tasks')
           .select('*, clients(first_name, last_name)')
           .eq('priority', 'Alta')
           .neq('status', 'Completada')
           .order('due_date', { ascending: true })
           .limit(5);
+        if (err4) console.error("DASHBOARD: Error en tareas urgentes:", err4);
 
-        if (notasData) setActividad(notasData);
-        setCalendario(allEvents);
-        if (todayTasksData) setTareasHoy(todayTasksData);
-        if (urgentTasksData) setUrgente(urgentTasksData);
+        if (mounted) {
+          if (notasData) setActividad(notasData);
+          setCalendario(allEvents);
+          if (todayTasksData) setTareasHoy(todayTasksData);
+          if (urgentTasksData) setUrgente(urgentTasksData);
+          console.log("DASHBOARD: Carga finalizada correctamente.");
+        }
       } catch (error) {
-        console.error("Error loading dashboard data:", error);
+        console.error("DASHBOARD: Error crítico cargando datos:", error);
       } finally {
-        setLoading(false);
+        if (mounted) setLoading(false);
       }
     };
 
     fetchDashboardData();
+
+    // Safety timeout: si en 6 segundos no ha cargado, forzamos el fin del loading
+    const timer = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn("DASHBOARD: Tiempo de espera agotado. Forzando visualización.");
+        setLoading(false);
+      }
+    }, 6000);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   const formatEventDate = (dateString: string) => {
