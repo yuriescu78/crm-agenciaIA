@@ -26,8 +26,8 @@ const GROQ_MODEL_MAP: Record<string, string> = {
 };
 
 function resolveModel(overrideIdentifier?: string): LanguageModel {
-  let provider = (process.env.LLM_PROVIDER ?? 'anthropic') as LlmProvider;
-  let modelName = process.env.LLM_MODEL ?? 'claude-haiku-4-5-20251001';
+  let provider = (process.env.LLM_PROVIDER ?? 'groq') as LlmProvider;
+  let modelName = process.env.LLM_MODEL ?? 'llama-3.1-8b-instant';
 
   if (overrideIdentifier) {
     if (overrideIdentifier.startsWith('groq-')) {
@@ -68,7 +68,7 @@ export const llmClient = {
       system: options.system,
       messages: options.messages,
       tools: options.tools,
-      stopWhen: stepCountIs(options.maxSteps ?? 3),
+      maxSteps: options.maxSteps ?? 3,
       temperature: options.temperature ?? 0.2,
     });
 
@@ -89,7 +89,7 @@ export const llmClient = {
       system: options.system,
       messages: options.messages,
       tools: options.tools,
-      stopWhen: stepCountIs(options.maxSteps ?? 3),
+      maxSteps: options.maxSteps ?? 3,
       temperature: options.temperature ?? 0.2,
     });
   },
