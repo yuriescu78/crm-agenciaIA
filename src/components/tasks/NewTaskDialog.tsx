@@ -177,7 +177,7 @@ export function NewTaskDialog({
                     {formData.client_id && clients.length > 0 ? (
                       (() => {
                         const c = clients.find(c => c.id === formData.client_id);
-                        return c ? `${c.company} (${c.first_name} ${c.last_name})` : undefined;
+                        return c ? c.company : undefined;
                       })()
                     ) : "Ninguno"}
                   </SelectValue>
@@ -197,7 +197,6 @@ export function NewTaskDialog({
                       <SelectItem key={client.id} value={client.id} className="focus:bg-primary/10 focus:text-primary">
                         <div className="flex flex-col text-left w-full">
                           <span className="font-bold">{client.company}</span>
-                          <span className="text-[10px] text-muted-foreground opacity-70">({client.first_name} {client.last_name})</span>
                         </div>
                       </SelectItem>
                     ))
