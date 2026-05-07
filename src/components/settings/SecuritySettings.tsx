@@ -72,7 +72,7 @@ export function SecuritySettings() {
     try {
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) throw error;
-      window.location.href = '/login';
+      window.location.href = '/';
     } catch (error: any) {
       toast.error('Error al cerrar sesiones', {
         description: error.message

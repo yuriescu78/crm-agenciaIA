@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, Search, UserPlus, Menu } from 'lucide-react';
@@ -24,10 +25,23 @@ export function Header() {
   const router = useRouter();
   const { userProfile } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    router.push('/login');
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+      // Usamos window.location.href para asegurar que se limpie todo el estado
+      // y que el AuthWrapper detecte la falta de sesión al recargar la raíz.
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error);
+      // Fallback en caso de error: intentar redirigir de todos modos
+      window.location.href = '/';
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
   
   const initials = userProfile?.name 
@@ -192,9 +206,10 @@ export function Header() {
             <DropdownMenuSeparator className="bg-border" />
             <DropdownMenuItem 
               onClick={handleLogout}
-              className="rounded-lg cursor-pointer font-bold text-red-400 focus:text-red-300 focus:bg-red-500/10 transition-colors"
+              disabled={isLoggingOut}
+              className="rounded-lg cursor-pointer font-bold text-red-400 focus:text-red-300 focus:bg-red-500/10 transition-colors disabled:opacity-50"
             >
-              Cerrar Sesión
+              {isLoggingOut ? 'Cerrando sesión...' : 'Cerrar Sesión'}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
