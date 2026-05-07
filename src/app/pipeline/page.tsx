@@ -12,7 +12,8 @@ import {
   Target,
   Activity,
   Briefcase,
-  Trophy
+  Trophy,
+  Trash2
 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -74,7 +75,7 @@ const columnColors: Record<string, string> = {
   "Negociación": "border-l-indigo-500",
 };
 
-function OppCard({ opp, columnColor, isDragging, isOverlay }: { opp: any, columnColor: string, isDragging?: boolean, isOverlay?: boolean }) {
+function OppCard({ opp, columnColor, isDragging, isOverlay, onDelete }: { opp: any, columnColor: string, isDragging?: boolean, isOverlay?: boolean, onDelete?: (e: React.MouseEvent) => void }) {
   return (
     <Card 
       className={cn(
@@ -86,17 +87,31 @@ function OppCard({ opp, columnColor, isDragging, isOverlay }: { opp: any, column
     >
       <CardContent className="p-4">
         <div className="flex justify-between items-start gap-2 mb-2">
-          <h4 className="text-[14px] font-bold text-foreground leading-tight truncate">
+          <h4 className="text-[14px] font-bold text-foreground leading-tight truncate flex-1">
             {opp.title}
           </h4>
-          <span className={cn(
-            "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter shrink-0",
-            opp.probability >= 70 ? "bg-red-500/10 text-red-400" : 
-            opp.probability >= 40 ? "bg-blue-500/10 text-blue-400" : 
-            "bg-muted text-muted-foreground"
-          )}>
-            {opp.probability >= 70 ? 'Alta' : opp.probability >= 40 ? 'Media' : 'Baja'}
-          </span>
+          <div className="flex items-center gap-1 shrink-0">
+            <span className={cn(
+              "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter",
+              opp.probability >= 70 ? "bg-red-500/10 text-red-400" : 
+              opp.probability >= 40 ? "bg-blue-500/10 text-blue-400" : 
+              "bg-muted text-muted-foreground"
+            )}>
+              {opp.probability >= 70 ? 'Alta' : opp.probability >= 40 ? 'Media' : 'Baja'}
+            </span>
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(e);
+                }}
+                className="p-1 text-muted-foreground/30 hover:text-red-500 transition-colors rounded hover:bg-red-500/10"
+                title="Eliminar oportunidad"
+              >
+                <Trash2 size={12} />
+              </button>
+            )}
+          </div>
         </div>
         
         <p className="text-[12px] font-medium text-muted-foreground mb-4">
@@ -115,7 +130,7 @@ function OppCard({ opp, columnColor, isDragging, isOverlay }: { opp: any, column
   );
 }
 
-function SortableOppCard({ opp, columnColor }: { opp: any, columnColor: string }) {
+function SortableOppCard({ opp, columnColor, onDelete }: { opp: any, columnColor: string, onDelete: (id: string) => void }) {
   const {
     attributes,
     listeners,
@@ -132,7 +147,12 @@ function SortableOppCard({ opp, columnColor }: { opp: any, columnColor: string }
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      <OppCard opp={opp} columnColor={columnColor} isDragging={isDragging} />
+      <OppCard 
+        opp={opp} 
+        columnColor={columnColor} 
+        isDragging={isDragging} 
+        onDelete={() => onDelete(opp.id)}
+      />
     </div>
   );
 }
@@ -144,7 +164,8 @@ function DroppableColumn({
   color, 
   icon: Icon, 
   loading, 
-  onAdd 
+  onAdd,
+  onDelete
 }: { 
   id: string, 
   title: string, 
@@ -152,7 +173,8 @@ function DroppableColumn({
   color: string, 
   icon: any, 
   loading: boolean, 
-  onAdd: () => void 
+  onAdd: () => void,
+  onDelete: (id: string) => void
 }) {
   const { setNodeRef, isOver } = useDroppable({ id });
 
@@ -213,7 +235,8 @@ function DroppableColumn({
               <SortableOppCard 
                 key={opp.id} 
                 opp={opp} 
-                columnColor={color} 
+                columnColor={color}
+                onDelete={onDelete}
               />
             ))
           )}
@@ -337,6 +360,24 @@ export default function PipelinePage() {
     }
   };
 
+  const handleDeleteOpportunity = async (id: string) => {
+    if (!window.confirm("¿Estás seguro de que deseas eliminar esta oportunidad?")) return;
+
+    // Optimistic update
+    setLocalOpps(prev => prev.filter(o => o.id !== id));
+
+    const { error } = await supabase
+      .from('opportunities')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting opportunity:", error);
+      alert("No se pudo eliminar la oportunidad");
+      refresh(); // Rollback
+    }
+  };
+
   const totalValue = filteredOpportunities.reduce((acc, curr) => acc + (curr.estimated_value || 0), 0);
 
   return (
@@ -379,6 +420,7 @@ export default function PipelinePage() {
                   icon={ColumnIcon}
                   loading={loading}
                   onAdd={() => {/* handled by top-level dialog */}}
+                  onDelete={handleDeleteOpportunity}
                 />
               );
             })}

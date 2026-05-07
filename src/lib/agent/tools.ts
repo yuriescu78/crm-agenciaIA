@@ -417,5 +417,27 @@ export function buildCrmTools(ctx: ToolContext) {
       },
     }),
 
+    delete_opportunity: tool({
+      description: 'Elimina una oportunidad comercial. SIEMPRE pide confirmación primero. Params: opportunity_id, confirmed.',
+      inputSchema: zodSchema(z.object({
+        opportunity_id: z.string().describe('UUID de la oportunidad'),
+        confirmed: z.string().optional().describe('true si el usuario confirmó'),
+      })),
+      execute: async (rawArgs: any) => {
+        const args = normalizeToolParams('delete_opportunity', rawArgs);
+        const oppId = args.opportunity_id || args.opportunityId;
+        if (!args.confirmed || args.confirmed === 'false') {
+          return { requiresConfirmation: true, message: '⚠️ ¿Seguro que quieres eliminar esta oportunidad? Responde "Sí, elimínala" para confirmar.' };
+        }
+        const { data: opp } = await supabase.from('opportunities').select('title, client_id').eq('id', oppId).single();
+        const { error } = await supabase.from('opportunities').delete().eq('id', oppId);
+        if (error) return { error: error.message };
+        if (opp?.client_id) {
+          await logActivity(supabase, ctx, { clientId: opp.client_id, type: 'Telegram', description: `Oportunidad eliminada: "${opp.title}"` });
+        }
+        return { success: true, message: `Oportunidad "${opp?.title}" eliminada correctamente.` };
+      },
+    }),
+
   };
 }
