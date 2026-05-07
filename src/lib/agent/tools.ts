@@ -52,7 +52,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     search_clients: {
       description: 'Busca clientes por nombre, email o empresa. Param: query (texto a buscar).',
-      parameters: z.object({
+      inputSchema: z.object({
         query: z.string().describe('Texto a buscar'),
       }),
       execute: async (rawArgs: any) => {
@@ -72,7 +72,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     list_clients: {
       description: 'Lista los clientes más recientes del CRM.',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const { data, error } = await supabase
           .from('clients')
@@ -86,7 +86,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     create_client: {
       description: 'Crea un nuevo cliente. Params: first_name (nombre), last_name (apellido), company (empresa), email, phone (teléfono). Solo first_name es obligatorio.',
-      parameters: z.object({
+      inputSchema: z.object({
         first_name: z.string().describe('Nombre del cliente'),
         last_name: z.string().optional().describe('Apellido del cliente'),
         company: z.string().optional().describe('Empresa del cliente'),
@@ -127,7 +127,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     create_task: {
       description: 'Crea una tarea. Params: title (título, obligatorio), description, priority (Alta/Media/Baja), client_id (UUID del cliente), due_date (fecha YYYY-MM-DD).',
-      parameters: z.object({
+      inputSchema: z.object({
         title: z.string().describe('Título de la tarea'),
         description: z.string().optional().describe('Descripción de la tarea'),
         priority: z.string().optional().describe('Alta, Media o Baja'),
@@ -172,7 +172,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     list_tasks: {
       description: 'Lista tareas pendientes del usuario. Params: today (true para solo hoy), urgent (true para solo urgentes).',
-      parameters: z.object({
+      inputSchema: z.object({
         today: z.string().optional().describe('true para filtrar tareas de hoy'),
         urgent: z.string().optional().describe('true para filtrar urgentes'),
       }),
@@ -204,7 +204,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     complete_task: {
       description: 'Marca una tarea como completada. Param: task_id (UUID de la tarea).',
-      parameters: z.object({
+      inputSchema: z.object({
         task_id: z.string().describe('UUID de la tarea a completar'),
       }),
       execute: async (rawArgs: any) => {
@@ -233,7 +233,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     get_agenda: {
       description: 'Eventos del calendario para una fecha. Param: date (YYYY-MM-DD).',
-      parameters: z.object({
+      inputSchema: z.object({
         date: z.string().describe('Fecha en formato YYYY-MM-DD'),
       }),
       execute: async (rawArgs: any) => {
@@ -255,7 +255,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     create_event: {
       description: 'Crea un evento/reunión. Params: title (título, obligatorio), description, type (tipo), start_at (inicio ISO 8601, obligatorio), end_at (fin ISO 8601), client_id (UUID cliente).',
-      parameters: z.object({
+      inputSchema: z.object({
         title: z.string().describe('Título del evento'),
         description: z.string().optional().describe('Descripción'),
         type: z.string().optional().describe('Tipo: Reunión, Llamada, etc.'),
@@ -318,7 +318,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     list_opportunities: {
       description: 'Lista oportunidades del pipeline comercial. Param opcional: stage (etapa para filtrar).',
-      parameters: z.object({
+      inputSchema: z.object({
         stage: z.string().optional().describe('Etapa para filtrar'),
       }),
       execute: async (rawArgs: any) => {
@@ -338,7 +338,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     create_opportunity: {
       description: 'Crea una oportunidad comercial. Params: title (título, obligatorio), stage (etapa), client_id (UUID cliente), estimated_value (valor en euros).',
-      parameters: z.object({
+      inputSchema: z.object({
         title: z.string().describe('Título de la oportunidad'),
         stage: z.string().optional().describe('Etapa del pipeline'),
         client_id: z.string().optional().describe('UUID del cliente'),
@@ -376,7 +376,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     update_opportunity_stage: {
       description: 'Cambia la etapa de una oportunidad. Params: opportunity_id (UUID), stage (nueva etapa).',
-      parameters: z.object({
+      inputSchema: z.object({
         opportunity_id: z.string().describe('UUID de la oportunidad'),
         stage: z.string().describe('Nueva etapa del pipeline'),
       }),
@@ -405,7 +405,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     get_daily_summary: {
       description: 'Resumen ejecutivo del día: clientes totales, tareas de hoy, reuniones, urgencias y tareas vencidas.',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
         const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
@@ -435,7 +435,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     delete_client: {
       description: 'Elimina (soft delete) un cliente. SIEMPRE pide confirmación antes. Params: client_id (UUID), confirmed (true/false).',
-      parameters: z.object({
+      inputSchema: z.object({
         client_id: z.string().describe('UUID del cliente'),
         confirmed: z.string().optional().describe('true si el usuario confirmó'),
       }),
@@ -464,7 +464,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     list_notifications: {
       description: 'Lista notificaciones recientes no leídas del usuario.',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const { data, error } = await supabase
           .from('notifications')
@@ -479,7 +479,7 @@ export function buildCrmTools(ctx: ToolContext) {
 
     mark_notifications_as_read: {
       description: 'Marca todas las notificaciones como leídas.',
-      parameters: z.object({}),
+      inputSchema: z.object({}),
       execute: async () => {
         const { error } = await supabase.from('notifications').update({ read: true })
           .eq('user_id', ctx.crmUserId).eq('read', false);
