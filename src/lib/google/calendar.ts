@@ -8,7 +8,7 @@ export async function syncEventToGoogle(eventData: {
 }) {
   try {
     const calendar = await getAuthorizedCalendar();
-    
+
     const response = await calendar.events.insert({
       calendarId: 'primary',
       requestBody: {
@@ -30,8 +30,10 @@ export async function syncEventToGoogle(eventData: {
       link: response.data.htmlLink
     };
   } catch (error) {
-    console.error('Error syncing to Google Calendar:', error);
-    // Don't throw, just log. We don't want to break the CRM if Google fails.
+    console.error('Error syncing to Google Calendar:', JSON.stringify(error, null, 2));
+    console.error('Error message:', (error as any)?.message);
+    console.error('Error status:', (error as any)?.status);
+    console.error('Error response:', (error as any)?.response?.data);
     return null;
   }
 }
@@ -39,7 +41,7 @@ export async function syncEventToGoogle(eventData: {
 export async function getGoogleEvents(timeMin: string, timeMax: string) {
   try {
     const calendar = await getAuthorizedCalendar();
-    
+
     const response = await calendar.events.list({
       calendarId: 'primary',
       timeMin,
