@@ -1,5 +1,5 @@
 import { generateText, streamText, stepCountIs } from 'ai';
-import type { ModelMessage, LanguageModel } from 'ai';
+import type { CoreMessage, LanguageModel, CoreTool } from 'ai';
 
 import { groqAdapter } from './adapters/groq';
 import { openaiAdapter } from './adapters/openai';
@@ -52,8 +52,8 @@ function resolveModel(overrideIdentifier?: string): LanguageModel {
 
 export interface ChatOptions {
   system?: string;
-  messages: ModelMessage[];
-  tools?: Record<string, any>;
+  messages: CoreMessage[];
+  tools?: Record<string, CoreTool<any, any>>;
   maxSteps?: number;
   temperature?: number;
   modelIdentifier?: string;
