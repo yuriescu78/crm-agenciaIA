@@ -128,6 +128,42 @@ export default function AjustesPage() {
               <ChevronRight size={16} className={cn("transition-colors", activeSection === sec.title ? "text-primary-500" : "text-neutral-300 group-hover:text-neutral-400")} />
             </div>
           ))}
+
+          {/* Botón de Diagnóstico */}
+          <div className="pt-6">
+            <Button 
+              variant="outline" 
+              className="w-full border-dashed border-2 border-neutral-200 text-neutral-400 text-[11px] font-black h-12 hover:border-primary-500 hover:text-primary-500 transition-all uppercase"
+              onClick={async () => {
+                const toastId = toast.loading('Diagnosticando conexión...');
+                try {
+                  const startTime = Date.now();
+                  const { data, error } = await Promise.race([
+                    supabase.from('users').select('count', { count: 'exact', head: true }),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT: El servidor no responde')), 5000))
+                  ]) as any;
+                  
+                  const duration = Date.now() - startTime;
+                  
+                  if (error) throw error;
+                  toast.success('Conexión Exitosa', {
+                    id: toastId,
+                    description: `Respuesta en ${duration}ms. La base de datos está ONLINE.`,
+                  });
+                } catch (err: any) {
+                  console.error("DIAGNOSTICO:", err);
+                  toast.error('Fallo de Conexión', {
+                    id: toastId,
+                    description: err.message === 'TIMEOUT: El servidor no responde' 
+                      ? 'El proyecto de Supabase parece estar PAUSADO o bloqueado.' 
+                      : 'Error: ' + err.message,
+                  });
+                }
+              }}
+            >
+              🩺 Diagnosticar Conexión
+            </Button>
+          </div>
         </div>
 
         {/* Content Area */}
