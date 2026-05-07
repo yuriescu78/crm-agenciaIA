@@ -43,8 +43,8 @@ export function NewTaskDialog({
   const open = externalOpen !== undefined ? externalOpen : internalOpen;
   const setOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen;
   
-  const { clients } = useClients();
-  const { users } = useUsers();
+  const { clients, loading: loadingClients } = useClients();
+  const { users, loading: loadingUsers } = useUsers();
   
   const [formData, setFormData] = useState({
     client_id: '',
@@ -168,23 +168,40 @@ export function NewTaskDialog({
             <div className="space-y-2">
               <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider ml-1">Asociar a Cliente (Opcional)</label>
               <Select 
+                key={clients.length > 0 ? 'loaded' : 'loading'}
                 value={formData.client_id} 
                 onValueChange={(val) => setFormData(prev => ({ ...prev, client_id: (val === 'none' || !val) ? '' : val }))}
               >
                 <SelectTrigger className="h-11 rounded bg-background border-border text-foreground focus:ring-1 focus:ring-primary">
-                  <SelectValue placeholder="Selecciona un cliente">
-                    {formData.client_id && clients.find(c => c.id === formData.client_id) 
-                      ? `${clients.find(c => c.id === formData.client_id)?.first_name} ${clients.find(c => c.id === formData.client_id)?.last_name}`
-                      : "Ninguno"}
+                  <SelectValue placeholder={loadingClients ? "Cargando clientes..." : "Selecciona un cliente"}>
+                    {formData.client_id && clients.length > 0 ? (
+                      (() => {
+                        const c = clients.find(c => c.id === formData.client_id);
+                        return c ? `${c.company} (${c.first_name} ${c.last_name})` : undefined;
+                      })()
+                    ) : "Ninguno"}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent className="bg-card border-border text-foreground">
                   <SelectItem value="none" className="focus:bg-primary/10 focus:text-primary">Ninguno</SelectItem>
-                  {clients.map(client => (
-                    <SelectItem key={client.id} value={client.id} className="focus:bg-primary/10 focus:text-primary">
-                      {client.first_name} {client.last_name} ({client.company})
-                    </SelectItem>
-                  ))}
+                  {loadingClients ? (
+                    <div className="p-4 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                      Cargando clientes...
+                    </div>
+                  ) : clients.length === 0 ? (
+                    <div className="p-4 text-center text-[11px] font-bold text-muted-foreground uppercase tracking-widest">
+                      No hay clientes registrados
+                    </div>
+                  ) : (
+                    clients.map(client => (
+                      <SelectItem key={client.id} value={client.id} className="focus:bg-primary/10 focus:text-primary">
+                        <div className="flex flex-col text-left w-full">
+                          <span className="font-bold">{client.company}</span>
+                          <span className="text-[10px] text-muted-foreground opacity-70">({client.first_name} {client.last_name})</span>
+                        </div>
+                      </SelectItem>
+                    ))
+                  )}
                 </SelectContent>
               </Select>
             </div>

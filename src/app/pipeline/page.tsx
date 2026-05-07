@@ -114,8 +114,11 @@ function OppCard({ opp, columnColor, isDragging, isOverlay, onDelete }: { opp: a
           </div>
         </div>
         
+        <div className="text-[11px] font-bold text-primary uppercase tracking-tight mb-1">
+          {opp.clients?.company}
+        </div>
         <p className="text-[12px] font-medium text-muted-foreground mb-4">
-          {opp.clients?.first_name} {opp.clients?.last_name}
+          ({opp.clients?.first_name} {opp.clients?.last_name})
         </p>
 
         <div className="flex items-center justify-between pt-3 border-t border-border">
