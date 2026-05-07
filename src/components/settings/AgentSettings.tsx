@@ -296,6 +296,8 @@ export function AgentSettings() {
                   <option value="groq-llama-3-70b">Groq Llama 3 (70B) - Ultra Rápido</option>
                   <option value="groq-llama-3-8b">Groq Llama 3 (8B) - Instantáneo</option>
                   <option value="gpt-4o">GPT-4o (OpenAI)</option>
+                  <option value="claude-3-5-haiku-20241022">Anthropic Claude 3.5 Haiku</option>
+                  <option value="claude-haiku-4-5-20251001">Anthropic Claude 4.5 Haiku (Beta)</option>
                 </select>
               </div>
             </div>
