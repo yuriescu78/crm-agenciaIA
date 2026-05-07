@@ -38,36 +38,52 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     let mounted = true;
 
-    const initAuth = async () => {
+    const initAuth = async (retryCount = 0) => {
       const startTime = Date.now();
-      console.log('AUTH: Iniciando verificación de sesión...');
+      console.log(`AUTH: Intento ${retryCount + 1} de verificación de sesión...`);
+      
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
-        const duration = Date.now() - startTime;
-        console.log(`AUTH: Sesión verificada en ${duration}ms.`, session ? "Usuario detectado." : "No hay sesión.");
+        // Usamos una promesa con timeout para cada intento individual
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('TIMEOUT_INDIVIDUAL')), 5000)
+        );
+
+        const { data, error }: any = await Promise.race([sessionPromise, timeoutPromise]);
         
         if (error) throw error;
         
+        const duration = Date.now() - startTime;
+        console.log(`AUTH: Sesión verificada en ${duration}ms.`, data.session ? "Usuario detectado." : "No hay sesión.");
+        
         if (mounted) {
-          setUser(session?.user ?? null);
-          await fetchProfile(session?.user ?? null);
+          setUser(data.session?.user ?? null);
+          await fetchProfile(data.session?.user ?? null);
+          setLoading(false);
         }
-      } catch (err) {
-        console.error('AUTH: Error inicializando sesión:', err);
-      } finally {
-        if (mounted) setLoading(false);
+      } catch (err: any) {
+        console.error(`AUTH: Fallo en intento ${retryCount + 1}:`, err.message);
+        
+        if (retryCount < 2 && mounted) {
+          const delay = (retryCount + 1) * 2000;
+          console.log(`AUTH: Reintentando en ${delay}ms...`);
+          setTimeout(() => initAuth(retryCount + 1), delay);
+        } else if (mounted) {
+          console.error('AUTH: Todos los reintentos fallaron.');
+          setLoading(false);
+        }
       }
     };
 
     initAuth();
 
-    // Aumentamos el margen a 12 segundos para dar tiempo en conexiones lentas
+    // Timeout global de seguridad más largo
     const safetyTimeout = setTimeout(() => {
       if (mounted && loading) {
         setLoading(false);
-        console.warn('AUTH: Tiempo de espera agotado (12s). Forzando carga con estado actual.');
+        console.warn('AUTH: Tiempo de espera global agotado. Mostrando estado offline/invitado.');
       }
-    }, 12000);
+    }, 20000);
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
