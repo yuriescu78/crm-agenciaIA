@@ -1,5 +1,5 @@
 import { generateText, streamText, stepCountIs } from 'ai';
-import type { ModelMessage, LanguageModel, Tool } from 'ai';
+import type { ModelMessage, LanguageModel } from 'ai';
 
 import { groqAdapter } from './adapters/groq';
 import { openaiAdapter } from './adapters/openai';
@@ -16,23 +16,19 @@ const ADAPTERS: Record<LlmProvider, AdapterFactory> = {
   ollama: ollamaAdapter,
 };
 
-/**
- * Mapeo de identificadores de UI a modelos reales.
- * Cambio v2: por defecto usa 8B (5x más margen en free tier).
- */
 const GROQ_MODEL_MAP: Record<string, string> = {
   'groq-llama-3-70b': 'llama-3.3-70b-versatile',
   'groq-llama-3-8b': 'llama-3.1-8b-instant',
 };
 
 function resolveModel(overrideIdentifier?: string): LanguageModel {
-  let provider = (process.env.LLM_PROVIDER ?? 'groq') as LlmProvider;
-  let modelName = process.env.LLM_MODEL ?? 'llama-3.1-8b-instant';
+  let provider = (process.env.LLM_PROVIDER ?? 'anthropic') as LlmProvider;
+  let modelName = process.env.LLM_MODEL ?? 'claude-haiku-4-5-20251001';
 
   if (overrideIdentifier) {
     if (overrideIdentifier.startsWith('groq-')) {
       provider = 'groq';
-      modelName = GROQ_MODEL_MAP[overrideIdentifier] || 'llama-3.1-8b-instant';
+      modelName = GROQ_MODEL_MAP[overrideIdentifier] || 'llama-3.3-70b-versatile';
     } else if (overrideIdentifier.startsWith('gpt-')) {
       provider = 'openai';
       modelName = overrideIdentifier;
@@ -53,7 +49,7 @@ function resolveModel(overrideIdentifier?: string): LanguageModel {
 export interface ChatOptions {
   system?: string;
   messages: ModelMessage[];
-  tools?: Record<string, Tool<any, any>>;
+  tools?: Record<string, any>;
   maxSteps?: number;
   temperature?: number;
   modelIdentifier?: string;
