@@ -93,9 +93,28 @@ export function NewEventDialog({ children, onEventCreated, defaultDate, event, o
     setLoading(true);
 
     try {
-      // Format start and end as ISO datetime for Europe/Madrid (Google Calendar handles timezone with explicit string or default)
+      // Format start and end as ISO datetime for Europe/Madrid
       const startAt = new Date(`${formData.date}T${formData.startTime}:00`).toISOString();
       const endAt = new Date(`${formData.date}T${formData.endTime}:00`).toISOString();
+
+      if (new Date(endAt) <= new Date(startAt)) {
+        toast.error('La hora de finalización debe ser posterior a la de inicio.');
+        setLoading(false);
+        return;
+      }
+
+      // Check for overlapping events at the exact same start time
+      const { data: overlapping } = await supabase
+        .from('calendar_events')
+        .select('id, title')
+        .eq('start_at', startAt)
+        .neq('id', event?.localId || '');
+
+      if (overlapping && overlapping.length > 0) {
+        toast.error(`Conflicto de horario: Ya existe el evento "${overlapping[0].title}" a esta misma hora.`);
+        setLoading(false);
+        return;
+      }
 
       let result;
       if (event?.id) {
