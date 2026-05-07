@@ -26,9 +26,8 @@ const GROQ_MODEL_MAP: Record<string, string> = {
 };
 
 function resolveModel(overrideIdentifier?: string): LanguageModel {
-  let provider = (process.env.LLM_PROVIDER ?? 'groq') as LlmProvider;
-  // v2: modelo por defecto cambiado a 8B
-  let modelName = process.env.LLM_MODEL ?? 'llama-3.1-8b-instant';
+  let provider = (process.env.LLM_PROVIDER ?? 'anthropic') as LlmProvider;
+  let modelName = process.env.LLM_MODEL ?? 'claude-haiku-4-5-20251001';
 
   if (overrideIdentifier) {
     if (overrideIdentifier.startsWith('groq-')) {
