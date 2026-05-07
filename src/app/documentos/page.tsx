@@ -174,7 +174,7 @@ export default function DocumentosPage() {
                 <div className="flex items-center gap-3">
                   <Users size={18} className="text-primary" />
                   <SelectValue placeholder="Seleccionar Cliente">
-                    {activeClient ? `${activeClient.first_name} ${activeClient.last_name || ''}` : 'Seleccionar Cliente'}
+                    {activeClient ? activeClient.company : 'Seleccionar Cliente'}
                   </SelectValue>
                 </div>
               </SelectTrigger>
@@ -185,8 +185,7 @@ export default function DocumentosPage() {
                       <div className={cn("w-6 h-6 rounded-full flex items-center justify-center text-[8px] font-black text-white bg-primary")}>
                         {(client.first_name?.[0] || '') + (client.last_name?.[0] || '')}
                       </div>
-                      {client.first_name} {client.last_name}
-                      {client.company && <span className="ml-2 text-[10px] opacity-40">({client.company})</span>}
+                      {client.company}
                     </div>
                   </SelectItem>
                 ))}
@@ -240,7 +239,7 @@ export default function DocumentosPage() {
             <Plus size={20} className="text-muted-foreground/40 group-hover:text-primary transition-colors" />
           )}
           <span className="text-sm font-bold group-hover:text-primary transition-colors uppercase tracking-widest text-[11px] text-muted-foreground/40">
-            {uploading ? "Subiendo archivo a Google Drive..." : `Arrastra archivos para subir a ${activeClient ? `${activeClient.first_name} ${activeClient.last_name || ''}` : 'cliente'}`}
+            {uploading ? "Subiendo archivo a Google Drive..." : `Arrastra archivos para subir a ${activeClient ? activeClient.company : 'cliente'}`}
           </span>
         </div>
       </div>
@@ -250,7 +249,7 @@ export default function DocumentosPage() {
         <div>
           <h2 className="text-xl font-bold text-foreground flex items-center gap-3">
             <Folder className="text-primary" size={22} />
-            Documentos de {activeClient ? `${activeClient.first_name} ${activeClient.last_name || ''}` : '...'}
+            Documentos de {activeClient ? activeClient.company : '...'}
           </h2>
           <p className="text-sm text-muted-foreground font-medium mt-1">
             {searchQuery 
