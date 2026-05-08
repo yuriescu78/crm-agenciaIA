@@ -23,8 +23,7 @@ REGLAS:
 - Usa emojis con moderación y **negritas** para datos clave.
 - NUNCA muestres IDs técnicos (UUIDs). Usa nombres y títulos.
 - Si el usuario saluda o dice "qué pasa", llama a get_daily_summary.
-- Acción directa: si el usuario dice "Crea cliente X de empresa Y", llama DIRECTAMENTE a create_client SIN buscar antes. NO hagas search_clients previo.
-- Acción directa: si dice "Agenda reunión con X el lunes a las 10", llama DIRECTAMENTE a create_event SIN buscar antes.
+- Acción directa: si dice "Añade a Carlos de Acme Corp", llama a create_client sin preguntar más.
 - Si falta info menor (prioridad, etapa), asume valores por defecto: Prioridad Media, Contacto Inicial.
 - SOLO pide confirmación antes de BORRAR registros o marcar oportunidad como ganada/perdida.
 - Si una búsqueda no da resultados, ofrece crear el registro.
@@ -32,12 +31,11 @@ REGLAS:
 - Si hay varios clientes con nombre similar, lista las opciones y pregunta cuál.
 
 CRITICAL - TOOL CALLS:
-- Usa SIEMPRE los nombres de campo EXACTOS del schema en snake_case inglés.
+- Al llamar a herramientas, usa SIEMPRE los nombres de campo EXACTOS del schema en inglés.
 - CORRECTO: {"first_name": "Test", "company": "TestCorp"}
 - INCORRECTO: {"nombre": "Test", "empresa": "TestCorp"}
-- Los campos son: first_name, last_name, company, email, phone, title, description, priority, due_date, start_at, end_at, client_id, task_id, opportunity_id.
-- NUNCA uses camelCase (dueDate, startAt, clientId) — usa siempre snake_case (due_date, start_at, client_id).
-- Para fechas relativas como "el lunes", "mañana", "el viernes a las 15h", pásalas TAL CUAL como string en start_at. El sistema las resolverá automáticamente.`;
+- Los campos son: first_name, last_name, company, email, phone, title, description, priority, dueDate, startAt, endAt, clientId.
+- NUNCA traduzcas los nombres de campo al español.`;
 
 // Máximo de mensajes de historial a enviar al LLM.
 // Cada mensaje extra cuesta ~500 tokens. Con 2 mensajes cubrimos
@@ -54,7 +52,7 @@ const DEFAULT_TEMPERATURE = 0.2;
 
 // Modelo por defecto: 8B es suficiente para tool calling y consume 7x menos.
 // El 70B se reserva para cuando el usuario lo configure explícitamente.
-const DEFAULT_MODEL = 'claude-haiku-4-5-20251001';
+const DEFAULT_MODEL = 'groq-llama-3-8b';
 
 export async function processUserMessage(
   userText: string,
@@ -75,10 +73,28 @@ export async function processUserMessage(
         : loadConversationHistory(ctx.telegramId, MAX_HISTORY_MESSAGES),
     ]);
 
-    // Construir prompt: base + instrucciones personalizadas (si las hay)
+    // Inyectar fecha actual para que el modelo resuelva fechas relativas
+    const now = new Date();
+    const todayISO = now.toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' }); // YYYY-MM-DD
+    const todayLabel = now.toLocaleDateString('es-ES', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+      timeZone: 'Europe/Madrid',
+    });
+    // Calcular próximos días de la semana para que el modelo no tenga que adivinar
+    const dayNames = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+    const nextDays = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() + i + 1);
+      const iso = d.toLocaleDateString('sv-SE', { timeZone: 'Europe/Madrid' });
+      return `${dayNames[d.getDay()]} = ${iso}`;
+    }).join(', ');
+
+    const dateContext = `FECHA ACTUAL: ${todayLabel} (${todayISO})\nPRÓXIMOS DÍAS: ${nextDays}`;
+
+    // Construir prompt: fecha + base + instrucciones personalizadas (si las hay)
     const systemPrompt = agentConfig?.instructions
-      ? `${DEFAULT_SYSTEM_PROMPT}\n\nINSTRUCCIONES ADICIONALES:\n${agentConfig.instructions}`
-      : DEFAULT_SYSTEM_PROMPT;
+      ? `${dateContext}\n\n${DEFAULT_SYSTEM_PROMPT}\n\nINSTRUCCIONES ADICIONALES:\n${agentConfig.instructions}`
+      : `${dateContext}\n\n${DEFAULT_SYSTEM_PROMPT}`;
 
     const model = agentConfig?.model || DEFAULT_MODEL;
     const temperature = agentConfig?.temperature ?? DEFAULT_TEMPERATURE;
