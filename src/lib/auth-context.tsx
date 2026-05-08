@@ -107,6 +107,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
+  // Inactivity timeout logic
+  useEffect(() => {
+    if (!user) return;
+
+    let timeoutId: NodeJS.Timeout;
+    const TWO_HOURS = 2 * 60 * 60 * 1000;
+
+    const logoutDueToInactivity = async () => {
+      console.log('AUTH: Cerrando sesión por inactividad...');
+      await supabase.auth.signOut();
+      window.location.href = '/';
+    };
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(logoutDueToInactivity, TWO_HOURS);
+    };
+
+    // Listen for any activity
+    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    events.forEach(event => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    // Start initial timer
+    resetTimer();
+
+    return () => {
+      events.forEach(event => {
+        window.removeEventListener(event, resetTimer);
+      });
+      if (timeoutId) clearTimeout(timeoutId);
+    };
+  }, [user]);
+
   return (
     <AuthContext.Provider value={{ user, userProfile, loading }}>
       {children}
