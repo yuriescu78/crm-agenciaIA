@@ -1,12 +1,19 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth-context';
 
 export function useTasks() {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchTasks = async () => {
+    if (!user?.id) {
+      setTasks([]);
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const { data, error: sbError } = await supabase
@@ -16,6 +23,7 @@ export function useTasks() {
           clients (first_name, last_name, company),
           opportunities (title)
         `)
+        .eq('assigned_to', user.id)
         .order('due_date', { ascending: true });
 
       if (sbError) throw sbError;
@@ -29,7 +37,7 @@ export function useTasks() {
 
   useEffect(() => {
     fetchTasks();
-  }, []);
+  }, [user?.id]);
 
   return { tasks, loading, error, refresh: fetchTasks };
 }
