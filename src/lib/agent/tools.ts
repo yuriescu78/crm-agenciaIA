@@ -95,10 +95,10 @@ export function buildCrmTools(ctx: ToolContext) {
           .from('clients')
           .insert({
             first_name: args.first_name,
-            last_name: args.last_name || '',
+            last_name: args.last_name || null,
             company: args.company || '',
-            email: args.email || '',
-            phone: args.phone || '',
+            email: args.email || null,
+            phone: args.phone || null,
             status: 'Nuevo',
             owner_id: ctx.crmUserId,
           })
@@ -414,28 +414,6 @@ export function buildCrmTools(ctx: ToolContext) {
         const { error } = await supabase.from('notifications').update({ read: true }).eq('user_id', ctx.crmUserId).eq('read', false);
         if (error) return { error: error.message };
         return { success: true, message: 'Notificaciones marcadas como leídas' };
-      },
-    }),
-
-    delete_opportunity: tool({
-      description: 'Elimina una oportunidad comercial. SIEMPRE pide confirmación primero. Params: opportunity_id, confirmed.',
-      inputSchema: zodSchema(z.object({
-        opportunity_id: z.string().describe('UUID de la oportunidad'),
-        confirmed: z.string().optional().describe('true si el usuario confirmó'),
-      })),
-      execute: async (rawArgs: any) => {
-        const args = normalizeToolParams('delete_opportunity', rawArgs);
-        const oppId = args.opportunity_id || args.opportunityId;
-        if (!args.confirmed || args.confirmed === 'false') {
-          return { requiresConfirmation: true, message: '⚠️ ¿Seguro que quieres eliminar esta oportunidad? Responde "Sí, elimínala" para confirmar.' };
-        }
-        const { data: opp } = await supabase.from('opportunities').select('title, client_id').eq('id', oppId).single();
-        const { error } = await supabase.from('opportunities').delete().eq('id', oppId);
-        if (error) return { error: error.message };
-        if (opp?.client_id) {
-          await logActivity(supabase, ctx, { clientId: opp.client_id, type: 'Telegram', description: `Oportunidad eliminada: "${opp.title}"` });
-        }
-        return { success: true, message: `Oportunidad "${opp?.title}" eliminada correctamente.` };
       },
     }),
 
