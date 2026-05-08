@@ -29,18 +29,18 @@ function getAdminClient() {
   );
 }
 
-// Obtener el telegram_id de un usuario CRM
+// Obtener el telegram_user_id de un usuario CRM
 async function getTelegramId(
   supabase: ReturnType<typeof getAdminClient>,
   crmUserId: string
 ): Promise<number | null> {
   const { data } = await supabase
     .from('telegram_users')
-    .select('telegram_id')
-    .eq('crm_user_id', crmUserId)
+    .select('telegram_user_id')
+    .eq('user_id', crmUserId)
     .eq('active', true)
     .single();
-  return data?.telegram_id || null;
+  return data?.telegram_user_id || null;
 }
 
 // Tipos de payload de Supabase webhooks

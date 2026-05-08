@@ -40,7 +40,7 @@ export async function GET(req: Request) {
     // 1. Obtener todos los usuarios activos con Telegram vinculado
     const { data: telegramUsers, error: tuError } = await supabase
       .from('telegram_users')
-      .select('telegram_id, crm_user_id')
+      .select('telegram_user_id, user_id')
       .eq('active', true);
 
     if (tuError || !telegramUsers?.length) {
@@ -51,8 +51,8 @@ export async function GET(req: Request) {
     let sent = 0;
 
     for (const tu of telegramUsers) {
-      const userId = tu.crm_user_id;
-      const chatId = tu.telegram_id;
+      const userId = tu.user_id;
+      const chatId = tu.telegram_user_id;
 
       try {
         const message = await buildDailySummary(supabase, userId, todayISO, nowISO);
