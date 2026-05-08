@@ -22,23 +22,28 @@ import { Badge } from '@/components/ui/badge';
 import { NewClientDialog } from '@/components/clients/NewClientDialog';
 import { EditClientDialog } from '@/components/clients/EditClientDialog';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth-context';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
 export default function ClientesPage() {
+  const { user } = useAuth();
   const [clientes, setClientes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
 
   const fetchClientes = async () => {
+    if (!user?.id) return;
     setLoading(true);
     try {
       const { data, error } = await supabase
         .from('clients')
         .select('*')
+        .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
+      if (error) console.error('Error fetching clients:', error);
       if (data) setClientes(data);
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -49,7 +54,7 @@ export default function ClientesPage() {
 
   useEffect(() => {
     fetchClientes();
-  }, []);
+  }, [user?.id]);
 
   const handleDeleteClient = async (id: string) => {
     if (confirm('¿Estás seguro de que deseas eliminar este cliente y TODOS los datos asociados (tareas, oportunidades, eventos)? Esta acción es irreversible.')) {
