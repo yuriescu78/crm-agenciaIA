@@ -58,6 +58,7 @@ export function buildCrmTools(ctx: ToolContext) {
         const { data, error } = await supabase
           .from('clients')
           .select('id, first_name, last_name, email, company, phone, status')
+          .eq('owner_id', ctx.crmUserId)
           .or(`first_name.ilike.%${safe}%,last_name.ilike.%${safe}%,company.ilike.%${safe}%,email.ilike.%${safe}%`)
           .limit(5);
         if (error) return { error: error.message };
@@ -72,6 +73,7 @@ export function buildCrmTools(ctx: ToolContext) {
         const { data, error } = await supabase
           .from('clients')
           .select('id, first_name, last_name, email, company, phone, status')
+          .eq('owner_id', ctx.crmUserId)
           .order('created_at', { ascending: false })
           .limit(10);
         if (error) return { error: error.message };
