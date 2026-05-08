@@ -3,17 +3,12 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 
 export function useOpportunities() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [opportunities, setOpportunities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOpportunities = async () => {
-    if (!user?.id) {
-      setOpportunities([]);
-      setLoading(false);
-      return;
-    }
     try {
       setLoading(true);
       const { data, error: sbError } = await supabase
@@ -26,7 +21,6 @@ export function useOpportunities() {
             company
           )
         `)
-        .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (sbError) throw sbError;
@@ -41,8 +35,8 @@ export function useOpportunities() {
   };
 
   useEffect(() => {
-    fetchOpportunities();
-  }, [user?.id]);
+    if (!authLoading) fetchOpportunities();
+  }, [authLoading]);
 
   return { opportunities, loading, error, refresh: fetchOpportunities };
 }
