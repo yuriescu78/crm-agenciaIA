@@ -1,15 +1,18 @@
 import { google } from 'googleapis';
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+const REDIRECT_URI = `${APP_URL}/api/auth/google/callback`;
+
 export const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI
+  REDIRECT_URI
 );
 
 export const getAuthUrl = () => {
   const scopes = [
     'https://www.googleapis.com/auth/calendar',
-    'https://www.googleapis.com/auth/drive.file'
+    'https://www.googleapis.com/auth/drive'
   ];
 
   return oauth2Client.generateAuthUrl({
@@ -42,12 +45,22 @@ export const getAuthorizedCalendar = async () => {
     .eq('account_email', 'elitoragenciaia@gmail.com')
     .single();
 
-  if (error || !data) throw new Error('Google integration not configured');
+  if (error || !data) {
+    console.error('Google integration error:', error);
+    throw new Error('Google integration not configured');
+  }
 
+  if (!data.refresh_token) {
+    throw new Error('Refresh token is missing in database');
+  }
+
+  // We ensure the client has the latest secret and ID from env
   oauth2Client.setCredentials({
     refresh_token: data.refresh_token
   });
 
+  // Force a refresh check if needed or just return the client
+  // The googleapis library will handle the refresh on the first request.
   return google.calendar({ version: 'v3', auth: oauth2Client });
 };
 

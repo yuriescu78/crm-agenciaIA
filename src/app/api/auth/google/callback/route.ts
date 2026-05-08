@@ -26,13 +26,20 @@ export async function GET(request: Request) {
 
     // Save to database
     // We store it for the specific agency email we are using
+    const updateData: any = {
+      account_email: 'elitoragenciaia@gmail.com',
+      updated_at: new Date().toISOString(),
+    };
+
+    // ONLY update refresh_token if we actually got a new one
+    // This prevents overwriting the existing one with empty string on re-auth
+    if (tokens.refresh_token) {
+      updateData.refresh_token = tokens.refresh_token;
+    }
+
     const { error } = await supabaseAdmin
       .from('google_tokens')
-      .upsert({
-        account_email: 'elitoragenciaia@gmail.com',
-        refresh_token: tokens.refresh_token || '', // Handle cases where it's not sent again
-        updated_at: new Date().toISOString(),
-      }, { onConflict: 'account_email' });
+      .upsert(updateData, { onConflict: 'account_email' });
 
     if (error) throw error;
 
