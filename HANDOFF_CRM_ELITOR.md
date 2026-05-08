@@ -1,5 +1,5 @@
 # Handoff: CRM ELITOR.IA + Bot Telegram
-*Última actualización: 8 mayo 2026 (sesión tarde)*
+*Última actualización: 8 mayo 2026 (sesión noche)*
 
 ## Contexto del proyecto
 CRM propio para agencia de IA, desarrollado en Next.js 16 + Supabase + TypeScript.
@@ -85,6 +85,17 @@ src/app/api/
 
 ### ✅ Calendario — creación de eventos fallaba
 **Fix:** Normalización de status/type a minúsculas sin tildes en tools.ts
+
+### ✅ Pipeline y Tareas mostraban 0 registros al navegar (commits 8d62274 + 72edc56, 8/5/2026 noche)
+**Causa raíz:** Los hooks `useTasks` y `useOpportunities` disparaban el query Supabase antes de que `AuthProvider` terminara de restaurar la sesión desde localStorage (race condition async). Con RLS `USING(true)` esto debería funcionar, pero causaba renders vacíos inconsistentes.
+**Error adicional:** Se añadieron filtros `.eq('owner_id')` / `.eq('assigned_to')` incorrectos porque esos campos son "Socio Responsable" / "Socio Asignado" opcionales — muchos registros tienen NULL → devolvía 0 filas.
+**Fix:**
+- `useOpportunities`: espera `!authLoading` antes de fetchear, SIN filtro de owner (pipeline es vista compartida)
+- `useTasks`: espera `!authLoading` antes de fetchear, SIN filtro de assigned_to (tareas son vista compartida; campo nullable)
+- `useClients` hook: SÍ filtra por `owner_id` (clients siempre tienen owner seteado)
+- Eliminados `console.log` de debug en `src/lib/supabase.ts`
+
+**Regla importante:** En `opportunities` y `tasks`, NO filtrar por owner/assigned_to — son campos de "responsable" opcionales. Solo `clients.owner_id` es siempre el creador del registro.
 
 ### ✅ /clientes mostraba "0 clientes registrados" en producción
 **Causas resueltas (8/5/2026):**
@@ -193,6 +204,8 @@ claude mcp add supabase -- npx -y @supabase/mcp-server-supabase@latest --access-
 - [ ] Evaluador bot (`eval-bot.ts`) — ejecutar dataset de 45 casos
 - [ ] Notificaciones avanzadas configurables (días sin actividad ajustable)
 - [ ] Lucho — verificar acceso completo y vincular Telegram
-- [ ] Revisar otras páginas con mismo patrón de bug (tareas, pipeline, calendario) — posible mismo problema de owner_id sin filtrar
+- [x] Hooks useTasks y useOpportunities corregidos — espera auth, filtros correctos (8/5/2026 noche)
+- [ ] Dashboard (`src/app/page.tsx`) — revisar queries sin auth guard
+- [ ] `clientes/[id]/page.tsx` — verificar que useClient(id) con filtro owner_id+id funciona bien
 - [x] Selector de modelo LLM en UI de ajustes — implementado y activo para bot Telegram
 - [x] /clientes mostraba 0 clientes — resuelto (commit 06c993d)
