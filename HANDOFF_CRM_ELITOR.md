@@ -1,5 +1,5 @@
 # Handoff: CRM ELITOR.IA + Bot Telegram
-*Última actualización: 8 mayo 2026*
+*Última actualización: 8 mayo 2026 (sesión tarde)*
 
 ## Contexto del proyecto
 CRM propio para agencia de IA, desarrollado en Next.js 16 + Supabase + TypeScript.
@@ -86,6 +86,17 @@ src/app/api/
 ### ✅ Calendario — creación de eventos fallaba
 **Fix:** Normalización de status/type a minúsculas sin tildes en tools.ts
 
+### ✅ /clientes mostraba "0 clientes registrados" en producción
+**Causas resueltas (8/5/2026):**
+- `src/app/clientes/page.tsx` no filtraba por `owner_id` → con RLS activo en Supabase el cliente anon devuelve 0 filas
+- Errores Supabase se swallaban silenciosamente: `{ data, error }` desestructurado pero `error` nunca comprobado dentro del try
+- `useEffect` no dependía de `user?.id` → no re-ejecutaba si el user se resolvía tarde
+- `src/lib/auth-context.tsx` consultaba `supabase.from('users')` → tabla no existe, es `profiles`
+**Fix aplicado:**
+- `clientes/page.tsx`: añadido `useAuth()`, `.eq('owner_id', user.id)`, guard `if (!user?.id)`, `if (error) console.error(...)`, deps `[user?.id]`
+- `auth-context.tsx`: `from('users')` → `from('profiles')`
+- Commit `06c993d` en main, desplegado en Vercel
+
 ## Compatibilidad de dependencias
 ```
 Zod 4 + AI SDK v6 + Anthropic/OpenAI → ✅ COMPATIBLE
@@ -141,10 +152,20 @@ SUPABASE_WEBHOOK_SECRET=...         ✅ (añadido 8/5/2026)
 - Contenido: tareas vencidas, tareas hoy, reuniones hoy, clientes sin actividad +7 días
 - Test: `curl -H "Authorization: Bearer <CRON_SECRET>" https://crm.elitorsoluciones.es/api/cron/daily-summary`
 
-## Comandos útiles
+## Git — configuración local
+El repo está en `C:\CRM-ELITOR` (inicializado el 8/5/2026).
+Remote: `https://github.com/yuriescu78/crm-agenciaIA.git`
+Branch: `main` → auto-deploy en Vercel
+
 ```bash
-# Build local
+# Build local (requiere Node 20+, local tiene Node 18 — solo funciona en Vercel)
 npm run build
+
+# TypeScript check local (sí funciona)
+npx tsc --noEmit
+
+# Push normal
+git add <archivos> && git commit -m "mensaje" && git push origin main
 
 # Forzar redeploy en Vercel
 git commit --allow-empty -m "force redeploy" && git push
@@ -156,10 +177,22 @@ curl -H "Authorization: Bearer <CRON_SECRET>" https://crm.elitorsoluciones.es/ap
 # Vercel Dashboard → proyecto → Logs → Live
 ```
 
+## MCP servers configurados (Claude Code local)
+Añadidos en `~/.claude/mcp.json` (scope global):
+- **vercel** — `npx @vercel/mcp-server` con `VERCEL_TOKEN`
+- **supabase** — `npx @supabase/mcp-server-supabase@latest` con `--access-token`
+Si no aparecen en `claude mcp list`, ejecutar:
+```bash
+claude mcp add vercel -e VERCEL_TOKEN=vcp_... -- npx -y @vercel/mcp-server
+claude mcp add supabase -- npx -y @supabase/mcp-server-supabase@latest --access-token sbp_...
+```
+
 ## Pendientes
 - [ ] Soft delete con campo `deleted_at` (clients, tasks, opportunities, calendar_events)
 - [ ] Tests Playwright — ajustar selectores a la UI real del CRM
 - [ ] Evaluador bot (`eval-bot.ts`) — ejecutar dataset de 45 casos
-- [x] Selector de Claude Haiku en la UI de ajustes del agente — **implementado y activo**
 - [ ] Notificaciones avanzadas configurables (días sin actividad ajustable)
 - [ ] Lucho — verificar acceso completo y vincular Telegram
+- [ ] Revisar otras páginas con mismo patrón de bug (tareas, pipeline, calendario) — posible mismo problema de owner_id sin filtrar
+- [x] Selector de modelo LLM en UI de ajustes — implementado y activo para bot Telegram
+- [x] /clientes mostraba 0 clientes — resuelto (commit 06c993d)

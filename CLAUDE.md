@@ -173,6 +173,8 @@ const result = await generateText({
 - [ ] Evaluador bot (`eval-bot.ts`) — dataset 45 casos
 - [ ] Notificaciones proactivas avanzadas (clientes sin actividad configurable)
 - [ ] Lucho (lutisco@gmail.com) — verificar acceso completo y vincular cuenta Telegram
+- [ ] Auditar otras páginas (tareas, pipeline, calendario, dashboard) — mismo bug potencial: queries sin `owner_id` + errores Supabase swallados silenciosamente
+- [x] /clientes mostraba 0 clientes — resuelto: `owner_id` filter + `useAuth()` + `from('profiles')` (commit 06c993d, 8/5/2026)
 - [x] Selector de modelo LLM en UI de ajustes del agente — implementado y activo para el bot Telegram
 
 ## Archivos y carpetas — NO tocar sin permiso explícito
