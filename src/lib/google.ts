@@ -1,7 +1,9 @@
 import { google } from 'googleapis';
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-const REDIRECT_URI = `${APP_URL}/api/auth/google/callback`;
+// GOOGLE_REDIRECT_URI must be set explicitly in Vercel env vars
+// e.g. https://crm.elitorsoluciones.es/api/auth/google/callback
+export const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI
+  || `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/auth/google/callback`;
 
 export const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
@@ -18,12 +20,13 @@ export const getAuthUrl = () => {
   return oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: scopes,
-    prompt: 'consent' // Force to get refresh_token
+    prompt: 'consent',
+    redirect_uri: REDIRECT_URI, // pass explicitly — some googleapis versions require it
   });
 };
 
 export const getTokensFromCode = async (code: string) => {
-  const { tokens } = await oauth2Client.getToken(code);
+  const { tokens } = await oauth2Client.getToken({ code, redirect_uri: REDIRECT_URI });
   return tokens;
 };
 
