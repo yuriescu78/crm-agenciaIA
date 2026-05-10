@@ -4,6 +4,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { User } from '@supabase/supabase-js';
 
+const INACTIVITY_LIMIT_MS = 2 * 60 * 60 * 1000; // 2 horas
+const LAST_ACTIVITY_KEY = 'elitor_last_activity';
+
 type AuthContextType = {
   user: User | null;
   userProfile: { role: string; name: string; email: string } | null;
@@ -26,51 +29,66 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (data) {
       setUserProfile(data);
     } else {
-      // Fallback profile if user record doesn't exist yet
       setUserProfile({
         name: sessionUser.email?.split('@')[0] || 'Usuario',
         email: sessionUser.email || '',
-        role: 'admin' // Default to admin in production if profile missing to avoid lockout
+        role: 'admin',
       });
     }
+  };
+
+  const signOutClean = async () => {
+    localStorage.removeItem(LAST_ACTIVITY_KEY);
+    await supabase.auth.signOut();
+    window.location.href = '/';
   };
 
   useEffect(() => {
     let mounted = true;
 
-    const initAuth = async (retryCount = 0) => {
-      const startTime = Date.now();
-      console.log(`AUTH: Intento ${retryCount + 1} de verificación de sesión...`);
-      
+    const initAuth = async () => {
       try {
-        // Usamos una promesa con timeout para cada intento individual
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('TIMEOUT_INDIVIDUAL')), 10000)
+        // Si hay registro de actividad previa, verificar que no haya expirado por inactividad
+        const lastActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
+        if (lastActivity) {
+          const elapsed = Date.now() - parseInt(lastActivity, 10);
+          if (elapsed > INACTIVITY_LIMIT_MS) {
+            // Inactividad superada entre sesiones del navegador → cerrar sesión
+            await signOutClean();
+            return;
+          }
+        }
+
+        // getUser() valida el token con el servidor Supabase (a diferencia de getSession()
+        // que solo lee localStorage sin verificar si el JWT sigue siendo válido)
+        const userPromise = supabase.auth.getUser();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('TIMEOUT')), 10000)
         );
 
-        const { data, error }: any = await Promise.race([sessionPromise, timeoutPromise]);
-        
-        if (error) throw error;
-        
-        const duration = Date.now() - startTime;
-        console.log(`AUTH: Sesión verificada en ${duration}ms.`, data.session ? "Usuario detectado." : "No hay sesión.");
-        
+        const { data: { user: validatedUser }, error } = await Promise.race([userPromise, timeoutPromise]) as Awaited<ReturnType<typeof supabase.auth.getUser>>;
+
+        if (error || !validatedUser) {
+          // Sesión inválida o expirada — limpiar y mostrar login
+          await supabase.auth.signOut();
+          if (mounted) {
+            setUser(null);
+            setUserProfile(null);
+            setLoading(false);
+          }
+          return;
+        }
+
         if (mounted) {
-          setUser(data.session?.user ?? null);
-          await fetchProfile(data.session?.user ?? null);
+          setUser(validatedUser);
+          await fetchProfile(validatedUser);
+          localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
           setLoading(false);
         }
-      } catch (err: any) {
-        // Usamos warn en lugar de error para los reintentos para evitar el overlay de error en desarrollo
-        console.warn(`AUTH: Intento ${retryCount + 1} fallido (${err.message}). Reintentando...`);
-        
-        if (retryCount < 2 && mounted) {
-          const delay = (retryCount + 1) * 2000;
-          console.log(`AUTH: Reintentando en ${delay}ms...`);
-          setTimeout(() => initAuth(retryCount + 1), delay);
-        } else if (mounted) {
-          console.error('AUTH: Todos los reintentos fallaron.');
+      } catch {
+        // Timeout u otro error de red — mostrar login sin sesión
+        if (mounted) {
+          setUser(null);
           setLoading(false);
         }
       }
@@ -78,66 +96,47 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initAuth();
 
-    // Timeout global de seguridad más largo
-    const safetyTimeout = setTimeout(() => {
-      if (mounted && loading) {
-        setLoading(false);
-        console.warn('AUTH: Tiempo de espera global agotado. Mostrando estado offline/invitado.');
-      }
-    }, 20000);
+    // Escuchar cambios de sesión (TOKEN_REFRESHED, SIGNED_OUT, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
 
-    // Listen for changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (mounted) {
-        setUser(session?.user ?? null);
-        try {
-          await fetchProfile(session?.user ?? null);
-        } catch (e) {
-          console.error('Error fetching profile on auth change:', e);
-        } finally {
-          setLoading(false);
-        }
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setUserProfile(null);
+        localStorage.removeItem(LAST_ACTIVITY_KEY);
+      } else if (session?.user) {
+        setUser(session.user);
+        await fetchProfile(session.user).catch(console.error);
+        localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       }
+      setLoading(false);
     });
 
     return () => {
       mounted = false;
-      clearTimeout(safetyTimeout);
       subscription.unsubscribe();
     };
   }, []);
 
-  // Inactivity timeout logic
+  // Inactivity timeout — resetea el timestamp en localStorage con cada interacción
+  // para que persista aunque el usuario cierre y reabra el navegador
   useEffect(() => {
     if (!user) return;
 
     let timeoutId: NodeJS.Timeout;
-    const TWO_HOURS = 2 * 60 * 60 * 1000;
-
-    const logoutDueToInactivity = async () => {
-      console.log('AUTH: Cerrando sesión por inactividad...');
-      await supabase.auth.signOut();
-      window.location.href = '/';
-    };
 
     const resetTimer = () => {
+      localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
       if (timeoutId) clearTimeout(timeoutId);
-      timeoutId = setTimeout(logoutDueToInactivity, TWO_HOURS);
+      timeoutId = setTimeout(signOutClean, INACTIVITY_LIMIT_MS);
     };
 
-    // Listen for any activity
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    events.forEach(event => {
-      window.addEventListener(event, resetTimer);
-    });
-
-    // Start initial timer
+    events.forEach(event => window.addEventListener(event, resetTimer));
     resetTimer();
 
     return () => {
-      events.forEach(event => {
-        window.removeEventListener(event, resetTimer);
-      });
+      events.forEach(event => window.removeEventListener(event, resetTimer));
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [user]);
