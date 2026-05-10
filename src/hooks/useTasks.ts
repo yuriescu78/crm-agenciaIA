@@ -3,7 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/auth-context';
 
 export function useTasks() {
-  const { loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,7 +31,7 @@ export function useTasks() {
 
   useEffect(() => {
     if (!authLoading) fetchTasks();
-  }, [authLoading]);
+  }, [authLoading, user?.id]);
 
   return { tasks, loading, error, refresh: fetchTasks };
 }

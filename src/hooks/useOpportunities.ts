@@ -36,7 +36,7 @@ export function useOpportunities() {
 
   useEffect(() => {
     if (!authLoading) fetchOpportunities();
-  }, [authLoading]);
+  }, [authLoading, user?.id]);
 
   return { opportunities, loading, error, refresh: fetchOpportunities };
 }
