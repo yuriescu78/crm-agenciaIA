@@ -131,13 +131,15 @@ export async function uploadFileToDrive(clientId: string, fileData: { name: stri
 
   const folderId = client.google_drive_folder_id || await ensureClientFolder(clientId, `${client.first_name} ${client.last_name || ''}`);
 
+  const mimeType = fileData.mimeType || 'application/octet-stream';
+
   const response = await drive.files.create({
     requestBody: {
       name: fileData.name,
       parents: [folderId],
     },
     media: {
-      mimeType: fileData.mimeType,
+      mimeType,
       body: Readable.from([fileData.body]),
     },
     fields: 'id, name, webViewLink, mimeType',

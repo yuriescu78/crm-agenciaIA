@@ -435,8 +435,9 @@ export async function uploadDocument(clientId: string, formData: FormData): Prom
 
     return { success: true, data: result };
   } catch (error: any) {
-    console.error('Error in uploadDocument action:', error);
-    return { success: false, error: error.message };
+    const detail = error?.response?.data?.error?.message || error?.response?.data?.error || error.message;
+    console.error('Error in uploadDocument action:', detail, error?.response?.data);
+    return { success: false, error: detail };
   }
 }
 
