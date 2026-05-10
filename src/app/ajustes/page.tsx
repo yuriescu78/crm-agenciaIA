@@ -138,24 +138,24 @@ export default function AjustesPage() {
                 const toastId = toast.loading('Diagnosticando conexión...');
                 try {
                   const startTime = Date.now();
-                  const { data, error } = await Promise.race([
-                    supabase.from('users').select('count', { count: 'exact', head: true }),
-                    new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT: El servidor no responde')), 5000))
+                  const { error } = await Promise.race([
+                    supabase.from('profiles').select('id').limit(1),
+                    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 10000))
                   ]) as any;
-                  
+
                   const duration = Date.now() - startTime;
-                  
+
                   if (error) throw error;
-                  toast.success('Conexión Exitosa', {
+                  toast.success('Conexión OK', {
                     id: toastId,
-                    description: `Respuesta en ${duration}ms. La base de datos está ONLINE.`,
+                    description: `Base de datos respondió en ${duration}ms.`,
                   });
                 } catch (err: any) {
-                  console.error("DIAGNOSTICO:", err);
-                  toast.error('Fallo de Conexión', {
+                  const isTimeout = err.message === 'TIMEOUT';
+                  toast.error('Sin respuesta de Supabase', {
                     id: toastId,
-                    description: err.message === 'TIMEOUT: El servidor no responde' 
-                      ? 'El proyecto de Supabase parece estar PAUSADO o bloqueado.' 
+                    description: isTimeout
+                      ? 'La base de datos tardó más de 10s. Puede ser latencia temporal — recarga la página.'
                       : 'Error: ' + err.message,
                   });
                 }
