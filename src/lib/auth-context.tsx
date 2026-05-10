@@ -37,9 +37,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // signOutClean tiene timeout de 3s para que funcione aunque Supabase esté caído
   const signOutClean = async () => {
     localStorage.removeItem(LAST_ACTIVITY_KEY);
-    await supabase.auth.signOut();
+    try {
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise<void>(resolve => setTimeout(resolve, 3000)),
+      ]);
+    } catch {
+      // ignorar — siempre redirigir
+    }
     window.location.href = '/';
   };
 
@@ -48,45 +56,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     const initAuth = async () => {
       try {
-        // Si hay registro de actividad previa, verificar que no haya expirado por inactividad
+        // Comprobar inactividad entre sesiones del navegador (persiste en localStorage)
         const lastActivity = localStorage.getItem(LAST_ACTIVITY_KEY);
-        if (lastActivity) {
-          const elapsed = Date.now() - parseInt(lastActivity, 10);
-          if (elapsed > INACTIVITY_LIMIT_MS) {
-            // Inactividad superada entre sesiones del navegador → cerrar sesión
-            await signOutClean();
-            return;
-          }
-        }
-
-        // getUser() valida el token con el servidor Supabase (a diferencia de getSession()
-        // que solo lee localStorage sin verificar si el JWT sigue siendo válido)
-        const userPromise = supabase.auth.getUser();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('TIMEOUT')), 10000)
-        );
-
-        const { data: { user: validatedUser }, error } = await Promise.race([userPromise, timeoutPromise]) as Awaited<ReturnType<typeof supabase.auth.getUser>>;
-
-        if (error || !validatedUser) {
-          // Sesión inválida o expirada — limpiar y mostrar login
-          await supabase.auth.signOut();
-          if (mounted) {
-            setUser(null);
-            setUserProfile(null);
-            setLoading(false);
-          }
+        if (lastActivity && Date.now() - parseInt(lastActivity, 10) > INACTIVITY_LIMIT_MS) {
+          await signOutClean();
           return;
         }
 
+        // getSession() lee localStorage sin red — resiliente a Supabase caído
+        // El cliente Supabase renueva el JWT automáticamente al hacer queries
+        const { data: { session } } = await supabase.auth.getSession();
+
         if (mounted) {
-          setUser(validatedUser);
-          await fetchProfile(validatedUser);
-          localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+          setUser(session?.user ?? null);
+          if (session?.user) {
+            await fetchProfile(session.user);
+            localStorage.setItem(LAST_ACTIVITY_KEY, Date.now().toString());
+          }
           setLoading(false);
         }
       } catch {
-        // Timeout u otro error de red — mostrar login sin sesión
         if (mounted) {
           setUser(null);
           setLoading(false);
@@ -96,7 +85,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     initAuth();
 
-    // Escuchar cambios de sesión (TOKEN_REFRESHED, SIGNED_OUT, etc.)
+    // onAuthStateChange gestiona: SIGNED_OUT (token inválido), TOKEN_REFRESHED, etc.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (!mounted) return;
 
@@ -118,8 +107,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  // Inactivity timeout — resetea el timestamp en localStorage con cada interacción
-  // para que persista aunque el usuario cierre y reabra el navegador
+  // Inactivity timeout — persiste el timestamp en localStorage con cada interacción
+  // para que el límite de 2h sobreviva cierres y reaperturas del navegador
   useEffect(() => {
     if (!user) return;
 

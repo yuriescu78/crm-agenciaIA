@@ -31,17 +31,16 @@ export function Header() {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     try {
-      await supabase.auth.signOut();
-      // Usamos window.location.href para asegurar que se limpie todo el estado
-      // y que el AuthWrapper detecte la falta de sesión al recargar la raíz.
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error);
-      // Fallback en caso de error: intentar redirigir de todos modos
-      window.location.href = '/';
-    } finally {
-      setIsLoggingOut(false);
+      // Timeout de 3s: si Supabase no responde, redirigir igualmente
+      await Promise.race([
+        supabase.auth.signOut(),
+        new Promise<void>(resolve => setTimeout(resolve, 3000)),
+      ]);
+    } catch {
+      // ignorar errores — siempre redirigir
     }
+    localStorage.removeItem('elitor_last_activity');
+    window.location.href = '/';
   };
   
   const initials = userProfile?.name 
