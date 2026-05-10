@@ -18,13 +18,12 @@ async function getTelegramId(
   supabase: ReturnType<typeof getAdminClient>,
   crmUserId: string
 ): Promise<number | null> {
-  const { data, error } = await supabase
+  const { data } = await supabase
     .from('telegram_users')
     .select('telegram_user_id')
     .eq('user_id', crmUserId)
     .eq('active', true)
     .single();
-  console.log('getTelegramId:', { crmUserId, data, error });
   return data?.telegram_user_id || null;
 }
 
@@ -68,6 +67,33 @@ async function handleWebhook(
   record: Record<string, any>,
   old_record: Record<string, any> | null
 ) {
+  const origin = record.origin || record.source || '';
+  if (origin === 'telegram') return;
+
+  // Documents: owner lookup va a través del cliente, no del registro directo
+  if (table === 'documents' && type === 'INSERT') {
+    if (!record.client_id) return;
+
+    const { data: client } = await supabase
+      .from('clients')
+      .select('first_name, last_name, owner_id')
+      .eq('id', record.client_id)
+      .single();
+
+    if (!client?.owner_id) return;
+
+    const chatId = await getTelegramId(supabase, client.owner_id);
+    if (!chatId) return;
+
+    const clientName = `${client.first_name} ${client.last_name || ''}`.trim();
+    const docName = record.name || 'Documento sin nombre';
+    await sendTelegramMessage(
+      chatId,
+      `📎 *Documento subido*\n*${docName}*\n👤 Cliente: ${clientName}`
+    );
+    return;
+  }
+
   const ownerId =
     record.owner_id ||
     record.assigned_to ||
@@ -75,41 +101,24 @@ async function handleWebhook(
     record.user_id ||
     null;
 
-  console.log('Webhook recibido:', { type, table, ownerId, record });
-
-  if (!ownerId) {
-    console.log('No ownerId encontrado, ignorando');
-    return;
-  }
-
-  const origin = record.origin || record.source || '';
-  if (origin === 'telegram') {
-    console.log('Origen telegram, ignorando para evitar loop');
-    return;
-  }
+  if (!ownerId) return;
 
   const chatId = await getTelegramId(supabase, ownerId);
-  if (!chatId) {
-    console.log('No chatId encontrado para ownerId:', ownerId);
-    return;
-  }
+  if (!chatId) return;
 
-  const message = buildNotificationMessage(type, table, record, old_record);
-  if (!message) {
-    console.log('No hay mensaje para este evento');
-    return;
-  }
+  const message = await buildNotificationMessage(supabase, type, table, record, old_record);
+  if (!message) return;
 
-  console.log('Enviando a Telegram:', { chatId, message: message.substring(0, 50) });
   await sendTelegramMessage(chatId, message);
 }
 
-function buildNotificationMessage(
+async function buildNotificationMessage(
+  supabase: ReturnType<typeof getAdminClient>,
   type: string,
   table: string,
   record: Record<string, any>,
   old_record: Record<string, any> | null
-): string | null {
+): Promise<string | null> {
 
   if (table === 'clients' && type === 'INSERT') {
     const name = `${record.first_name || ''} ${record.last_name || ''}`.trim();
@@ -118,23 +127,41 @@ function buildNotificationMessage(
   }
 
   if (table === 'tasks' && type === 'INSERT') {
+    let clientLine = '';
+    if (record.client_id) {
+      const { data: client } = await supabase
+        .from('clients')
+        .select('first_name, last_name')
+        .eq('id', record.client_id)
+        .single();
+      if (client) {
+        clientLine = `\n👤 Cliente: ${`${client.first_name} ${client.last_name || ''}`.trim()}`;
+      }
+    }
     const priority = record.priority === 'Alta' ? '🔴' : record.priority === 'Media' ? '🟡' : '🟢';
     const due = record.due_date
-      ? `\n📅 Vence: ${new Date(record.due_date).toLocaleDateString('es-ES')}`
+      ? `\n📅 Vence: ${new Date(record.due_date).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}`
       : '';
-    return `${priority} *Nueva tarea creada*\n${record.title}${due}`;
+    return `${priority} *Nueva tarea creada*\n*${record.title}*${clientLine}${due}`;
   }
 
   if (table === 'tasks' && type === 'UPDATE') {
     const oldStatus = old_record?.status;
     const newStatus = record.status;
-    if (oldStatus === 'pendiente' && newStatus === 'completada') {
-      return `✅ *Tarea completada*\n${record.title}`;
-    }
-    if (oldStatus === 'completada' && newStatus === 'pendiente') {
-      return `🔄 *Tarea reactivada*\n${record.title}`;
-    }
-    return null;
+    if (oldStatus === newStatus) return null;
+
+    const statusIcons: Record<string, string> = {
+      'Completada': '✅',
+      'completada': '✅',
+      'En progreso': '🔄',
+      'en_progreso': '🔄',
+      'Pendiente': '⏳',
+      'pendiente': '⏳',
+      'En revisión': '🔍',
+      'Bloqueada': '🚫',
+    };
+    const icon = statusIcons[newStatus] || '📋';
+    return `${icon} *Estado de tarea actualizado*\n*${record.title}*\n${oldStatus} → *${newStatus}*`;
   }
 
   if (table === 'calendar_events' && type === 'INSERT') {
@@ -156,12 +183,9 @@ function buildNotificationMessage(
   if (table === 'calendar_events' && type === 'UPDATE') {
     const oldStatus = old_record?.status;
     const newStatus = record.status;
-    if (oldStatus === 'programado' && newStatus === 'realizado') {
-      return `✅ *Evento marcado como realizado*\n${record.title}`;
-    }
-    if (newStatus === 'cancelado') {
-      return `❌ *Evento cancelado*\n${record.title}`;
-    }
+    if (oldStatus === newStatus) return null;
+    if (newStatus === 'realizado') return `✅ *Evento marcado como realizado*\n${record.title}`;
+    if (newStatus === 'cancelado') return `❌ *Evento cancelado*\n${record.title}`;
     return null;
   }
 
@@ -175,11 +199,9 @@ function buildNotificationMessage(
   if (table === 'opportunities' && type === 'UPDATE') {
     const oldStage = old_record?.stage;
     const newStage = record.stage;
-    if (oldStage !== newStage) {
-      const icon = newStage === 'Ganado' ? '🏆' : newStage === 'Perdido' ? '❌' : '📊';
-      return `${icon} *Oportunidad actualizada*\n*${record.title}*\n${oldStage} → *${newStage}*`;
-    }
-    return null;
+    if (oldStage === newStage) return null;
+    const icon = newStage === 'Ganado' ? '🏆' : newStage === 'Perdido' ? '❌' : '📊';
+    return `${icon} *Oportunidad actualizada*\n*${record.title}*\n${oldStage} → *${newStage}*`;
   }
 
   if (table === 'activities' && type === 'INSERT') {
