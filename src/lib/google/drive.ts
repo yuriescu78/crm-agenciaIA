@@ -118,6 +118,15 @@ export async function syncFolderFiles(clientId: string) {
  * Uploads a file to a client's Google Drive folder.
  */
 export async function uploadFileToDrive(clientId: string, fileData: { name: string, mimeType: string, body: Buffer }) {
+  // Validate OAuth before attempting upload — gives a clear error if token is revoked
+  const { oauth2Client } = await import('@/lib/google');
+  try {
+    await oauth2Client.getAccessToken();
+  } catch (authErr: any) {
+    const desc = authErr?.response?.data?.error_description || authErr?.response?.data?.error || authErr.message;
+    throw new Error(`Google OAuth inválido: ${desc}. Ve a Ajustes → Google y vuelve a conectar la cuenta.`);
+  }
+
   const drive = await getAuthorizedDrive();
   const supabase = createSupabaseClientForUser('system');
 

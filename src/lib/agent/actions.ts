@@ -412,7 +412,20 @@ export async function checkGoogleConnection(): Promise<boolean> {
   if (error || !data || !data.refresh_token) {
     return false;
   }
-  return true;
+
+  // Verify the token actually works — not just that it exists in the DB
+  try {
+    const { google } = await import('googleapis');
+    const oauth2 = new google.auth.OAuth2(
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+    );
+    oauth2.setCredentials({ refresh_token: data.refresh_token });
+    await oauth2.getAccessToken();
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function uploadDocument(clientId: string, formData: FormData): Promise<{ success: boolean; data?: any; error?: string }> {
@@ -435,8 +448,11 @@ export async function uploadDocument(clientId: string, formData: FormData): Prom
 
     return { success: true, data: result };
   } catch (error: any) {
-    const detail = error?.response?.data?.error?.message || error?.response?.data?.error || error.message;
-    console.error('Error in uploadDocument action:', detail, error?.response?.data);
+    const data = error?.response?.data;
+    const detail = data?.error?.message
+      || (data?.error && typeof data.error === 'string' ? `${data.error}${data.error_description ? ': ' + data.error_description : ''}` : null)
+      || error.message;
+    console.error('Error in uploadDocument action:', detail, data);
     return { success: false, error: detail };
   }
 }
