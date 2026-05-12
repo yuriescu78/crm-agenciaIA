@@ -19,7 +19,6 @@ export function useClients() {
       const { data, error: sbError } = await supabase
         .from('clients')
         .select('*')
-        .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (sbError) throw sbError;
@@ -55,7 +54,6 @@ export function useClient(id: string) {
         .from('clients')
         .select('*')
         .eq('id', id)
-        .eq('owner_id', user.id)
         .single();
 
       if (sbError) throw sbError;
