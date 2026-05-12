@@ -72,7 +72,7 @@ export function EditClientDialog({
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const { data } = await supabase.from('users').select('id, name');
+      const { data } = await supabase.from('profiles').select('id, name');
       if (data) setUsers(data);
     };
     fetchUsers();

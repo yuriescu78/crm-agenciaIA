@@ -164,8 +164,8 @@ export default function ClientesPage() {
                     {cliente.first_name?.charAt(0)}{cliente.last_name?.charAt(0)}
                   </div>
                   <div>
-                    <h3 className="font-bold text-foreground text-base">{cliente.first_name} {cliente.last_name || ''}</h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">{cliente.company || 'Individual'}</p>
+                    <h3 className="font-bold text-foreground text-base">{`${cliente.first_name || ''} ${cliente.last_name || ''}`.trim().toUpperCase()}</h3>
+                    <p className="text-sm text-muted-foreground mt-0.5">{(cliente.company || 'Individual').toUpperCase()}</p>
                   </div>
                 </div>
                 <Badge variant={getStatusVariant(cliente.status)} className="rounded bg-muted/50 text-foreground border-border font-medium text-[10px] px-2 py-0.5 uppercase tracking-wider">
@@ -241,14 +241,14 @@ export default function ClientesPage() {
                         <div className="w-8 h-8 rounded-full bg-primary/5 flex items-center justify-center text-primary font-bold text-[10px]">
                           {cliente.first_name?.charAt(0)}{cliente.last_name?.charAt(0)}
                         </div>
-                        <span className="font-semibold text-[14px] text-foreground">{cliente.first_name} {cliente.last_name || ''}</span>
+                        <span className="font-semibold text-[14px] text-foreground">{`${cliente.first_name || ''} ${cliente.last_name || ''}`.trim().toUpperCase()}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-foreground text-[14px] font-medium">{cliente.company || 'Individual'}</span>
+                      <span className="text-foreground text-[14px] font-medium">{(cliente.company || 'Individual').toUpperCase()}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-foreground text-[14px] font-medium">{cliente.email || 'No email'}</span>
+                      <span className="text-foreground text-[14px] font-medium">{cliente.email ? cliente.email.toUpperCase() : 'No email'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <Badge variant={getStatusVariant(cliente.status)} className="rounded bg-muted/50 text-foreground border-border font-medium px-2 py-0.5 text-[10px] uppercase tracking-wider">
