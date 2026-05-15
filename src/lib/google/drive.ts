@@ -114,6 +114,22 @@ export async function syncFolderFiles(clientId: string) {
   return { count: driveFiles.length };
 }
 
+const TEAM_EMAILS = ['yuriescu78@gmail.com', 'lutisco@gmail.com'];
+
+async function shareFileWithTeam(drive: any, fileId: string) {
+  for (const email of TEAM_EMAILS) {
+    try {
+      await drive.permissions.create({
+        fileId,
+        requestBody: { role: 'writer', type: 'user', emailAddress: email },
+        sendNotificationEmail: false,
+      });
+    } catch (err: any) {
+      console.error(`Error sharing ${fileId} with ${email}:`, err?.message);
+    }
+  }
+}
+
 /**
  * Deletes a file from Google Drive by its file ID.
  */
@@ -163,6 +179,8 @@ export async function uploadFileToDrive(clientId: string, fileData: { name: stri
   });
 
   const newFile = response.data;
+
+  await shareFileWithTeam(drive, newFile.id!);
 
   // Insert into Supabase documents table
   const docData = {
