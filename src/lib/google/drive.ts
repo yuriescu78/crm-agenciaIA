@@ -115,6 +115,14 @@ export async function syncFolderFiles(clientId: string) {
 }
 
 /**
+ * Deletes a file from Google Drive by its file ID.
+ */
+export async function deleteFileFromDrive(googleDriveId: string): Promise<void> {
+  const drive = await getAuthorizedDrive();
+  await drive.files.delete({ fileId: googleDriveId });
+}
+
+/**
  * Uploads a file to a client's Google Drive folder.
  */
 export async function uploadFileToDrive(clientId: string, fileData: { name: string, mimeType: string, body: Buffer }) {

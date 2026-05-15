@@ -94,7 +94,7 @@ export default function DocumentosPage() {
   };
 
   const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`¿Estás seguro de que quieres eliminar el registro de "${name}"? (No se borrará el archivo de Google Drive)`)) return;
+    if (!confirm(`¿Estás seguro de que quieres eliminar "${name}"? Se eliminará también de Google Drive.`)) return;
     
     const result = await remove(id);
     if (result.success) {

@@ -393,11 +393,28 @@ export async function listDocuments(clientId: string): Promise<{ data: any[] | n
 
 export async function deleteDocument(documentId: string): Promise<{ success: boolean; error: string | null }> {
   const db = getSupabaseAdmin();
+
+  const { data: doc } = await db
+    .from('documents')
+    .select('google_drive_id')
+    .eq('id', documentId)
+    .single();
+
+  if (doc?.google_drive_id) {
+    try {
+      const { deleteFileFromDrive } = await import('@/lib/google/drive');
+      await deleteFileFromDrive(doc.google_drive_id);
+    } catch (driveErr: any) {
+      console.error('Error deleting from Drive:', driveErr?.message);
+      // Continúa con el borrado en DB aunque falle Drive
+    }
+  }
+
   const { error } = await db
     .from('documents')
     .delete()
     .eq('id', documentId);
-    
+
   return { success: !error, error: error?.message || null };
 }
 
